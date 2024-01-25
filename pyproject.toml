@@ -2,7 +2,7 @@
 name = "pony-express"
 version = "0.1.0"
 description = ""
-authors = ["your_name <your@email>"]
+authors = ["Wensen Zhang <wensen.zhang@utah.edu>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -11,6 +11,9 @@ fastapi = "0.108.0"
 uvicorn = "0.25.0"
 pytest = "7.4.0"
 httpx = "0.26.0"
+
+[[tool.poetry.packages]]
+include = "backend/*"
 
 [build-system]
 requires = ["poetry-core"]
