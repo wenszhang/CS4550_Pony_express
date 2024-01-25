@@ -1,2 +1,6 @@
 poetry install
 uvicorn main:app --reload
+
+To ensure that your app runs properly,
+you should be able to run your local server
+using the command uvicorn backend.main:app.
