@@ -5,7 +5,11 @@ import json
 
 from fastapi.openapi.models import Response
 
-app = FastAPI()
+app = FastAPI(
+    title="Assignment #1 - FastAPI backend",
+    description="API for users and chat functions.",
+    version="0.0.1"
+)
 
 # Load data from fake_db.json
 with open('fake_db.json', 'r') as file:
@@ -18,7 +22,7 @@ def current_iso_datetime():
 
 
 # GET /users
-@app.get("/users")
+@app.get("/users", tags=["Users"], summary="Get all users")
 async def get_users():
     users = sorted(data.get('users', {}).values(), key=lambda x: x['id'])
     return {
@@ -30,7 +34,7 @@ async def get_users():
 
 
 # POST /users
-@app.post("/users", status_code=status.HTTP_200_OK)
+@app.post("/users", tags=["Users"], summary="Create a new user")
 async def create_user(user: Dict[str, str]):
     user_id = user.get("id")
     if user_id in data["users"]:
@@ -51,7 +55,7 @@ async def create_user(user: Dict[str, str]):
 
 
 # GET /users/{user_id}
-@app.get("/users/{user_id}", status_code=status.HTTP_200_OK)
+@app.get("/users/{user_id}", tags=["Users"], summary="Get a user by ID")
 async def get_user(user_id: str):
     user = data["users"].get(user_id)
     if not user:
@@ -64,7 +68,7 @@ async def get_user(user_id: str):
 
 
 # GET /users/{user_id}/chats
-@app.get("/users/{user_id}/chats", status_code=status.HTTP_200_OK)
+@app.get("/users/{user_id}/chats", tags=["Chats"], summary="Get chats for a specific user")
 async def get_user_chats(user_id: str):
     if user_id not in data["users"]:
         raise HTTPException(status_code=404, detail={
@@ -84,7 +88,7 @@ async def get_user_chats(user_id: str):
 
 
 # GET /chats
-@app.get("/chats")
+@app.get("/chats", tags=["Chats"], summary="Get all chats")
 async def get_chats():
     chats = sorted(data.get('chats', {}).values(), key=lambda x: x['name'])
     return {
@@ -96,7 +100,7 @@ async def get_chats():
 
 
 # GET /chats/{chat_id}
-@app.get("/chats/{chat_id}")
+@app.get("/chats/{chat_id}", tags=["Chats"], summary="Get a chat by ID")
 async def get_chat(chat_id: str):
     chat = data["chats"].get(chat_id)
     if not chat:
@@ -109,7 +113,7 @@ async def get_chat(chat_id: str):
 
 
 # PUT /chats/{chat_id}
-@app.put("/chats/{chat_id}")
+@app.put("/chats/{chat_id}", tags=["Chats"], summary="Update a chat name by ID")
 async def update_chat(chat_id: str, update_data: Dict[str, str]):
     chat = data["chats"].get(chat_id)
     if not chat:
@@ -122,8 +126,7 @@ async def update_chat(chat_id: str, update_data: Dict[str, str]):
     return {"chat": chat}
 
 
-# DELETE /chats/{chat_id}
-@app.delete("/chats/{chat_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/chats/{chat_id}", tags=["Chats"], summary="Delete a chat by ID")
 async def delete_chat(chat_id: str):
     if chat_id not in data["chats"]:
         raise HTTPException(status_code=404, detail={
@@ -136,7 +139,7 @@ async def delete_chat(chat_id: str):
 
 
 # GET /chats/{chat_id}/messages
-@app.get("/chats/{chat_id}/messages")
+@app.get("/chats/{chat_id}/messages", tags=["Chats"], summary="Get messages for a specific chat")
 async def get_chat_messages(chat_id: str):
     if chat_id not in data["chats"]:
         raise HTTPException(status_code=404, detail={
@@ -155,7 +158,7 @@ async def get_chat_messages(chat_id: str):
 
 
 # GET /chats/{chat_id}/users
-@app.get("/chats/{chat_id}/users")
+@app.get("/chats/{chat_id}/users", tags=["Chats"], summary="Get users in a specific chat")
 async def get_chat_users(chat_id: str):
     if chat_id not in data["chats"]:
         raise HTTPException(status_code=404, detail={
