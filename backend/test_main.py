@@ -7,6 +7,8 @@ client = TestClient(app)
 
 class TestAPI(TestCase):
 
+    # [Tests for each route] ===============================
+
     def test_get_users(self):
         response = client.get("/users")
         self.assertEqual(response.status_code, 200)
@@ -67,3 +69,60 @@ class TestAPI(TestCase):
         response = client.get(f"/chats/{chat_id}/users")
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json().get("users"), list)
+
+    # [Tests for invalid IDs] ===============================
+    def test_get_user_invalid_id(self):
+        response = client.get("/users/non_existing_user")
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_user_chats_invalid_id(self):
+        response = client.get("/users/non_existing_user/chats")
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_chat_invalid_id(self):
+        response = client.get("/chats/non_existing_chat")
+        self.assertEqual(response.status_code, 404)
+
+    def test_update_chat_invalid_id(self):
+        updated_data = {"name": "New Chat Name"}
+        response = client.put("/chats/non_existing_chat", json=updated_data)
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_chat_invalid_id(self):
+        response = client.delete("/chats/non_existing_chat")
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_chat_messages_invalid_id(self):
+        response = client.get("/chats/non_existing_chat/messages")
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_chat_users_invalid_id(self):
+        response = client.get("/chats/non_existing_chat/users")
+        self.assertEqual(response.status_code, 404)
+
+    # [Tests for invalid IDs] ===============================
+
+    def test_create_user_duplicate_id(self):
+        # Create a new user
+        user_data = {"id": "duplicate_user"}
+        response = client.post("/users", json=user_data)
+        self.assertEqual(response.status_code, 200)
+
+        # Try to create the same user again
+        response = client.post("/users", json=user_data)
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("detail", response.json())
+        self.assertEqual(response.json()["detail"]["type"], "duplicate_entity")
+
+    def test_create_chat_duplicate_id(self):
+        # First, create a new chat
+        chat_data = {"id": "duplicate_chat", "name": "Test Chat", "user_ids": ["user1"], "owner_id": "user1"}
+        response = client.post("/chats", json=chat_data)
+        self.assertEqual(response.status_code, 200)
+
+        # Try to create the same chat again
+        response = client.post("/chats", json=chat_data)
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("detail", response.json())
+        self.assertEqual(response.json()["detail"]["type"], "duplicate_entity")
+
