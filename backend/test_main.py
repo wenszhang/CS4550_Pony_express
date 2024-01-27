@@ -100,8 +100,7 @@ class TestAPI(TestCase):
         response = client.get("/chats/non_existing_chat/users")
         self.assertEqual(response.status_code, 404)
 
-    # [Tests for invalid IDs] ===============================
-
+    # [Tests for duplicate IDs] ===============================
     def test_create_user_duplicate_id(self):
         # Create a new user
         user_data = {"id": "duplicate_user"}
@@ -125,4 +124,3 @@ class TestAPI(TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertIn("detail", response.json())
         self.assertEqual(response.json()["detail"]["type"], "duplicate_entity")
-
