@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, status
-from typing import List, Dict
+from typing import Dict
 from datetime import datetime
 import json
 
@@ -68,7 +68,7 @@ async def get_user(user_id: str):
 
 
 # GET /users/{user_id}/chats
-@app.get("/users/{user_id}/chats", tags=["Chats"], summary="Get chats for a specific user")
+@app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user")
 async def get_user_chats(user_id: str):
     if user_id not in data["users"]:
         raise HTTPException(status_code=404, detail={
@@ -77,13 +77,11 @@ async def get_user_chats(user_id: str):
             "entity_id": user_id
         })
 
-    chats = [chat for chat in data.get('chats', {}).values() if user_id in chat['user_ids']]
-    chats = sorted(chats, key=lambda x: x['name'])
+    user_chats = [chat for chat in data.get('chats', {}).values() if user_id in chat['user_ids']]
+    user_chats = sorted(user_chats, key=lambda x: x['name'])
     return {
-        "meta": {
-            "count": len(chats)
-        },
-        "chats": chats
+        "meta": {"count": len(user_chats)},
+        "chats": user_chats
     }
 
 
@@ -92,9 +90,7 @@ async def get_user_chats(user_id: str):
 async def get_chats():
     chats = sorted(data.get('chats', {}).values(), key=lambda x: x['name'])
     return {
-        "meta": {
-            "count": len(chats)
-        },
+        "meta": {"count": len(chats)},
         "chats": chats
     }
 
