@@ -82,26 +82,40 @@ async def get_user_chats(user_id: str):
         })
 
     user_chats = [chat for chat in data.get('chats', {}).values() if user_id in chat.get('user_ids', [])]
-    for chat in user_chats:
-        # Ensuring each chat has all required fields
-        if not all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]):
-            raise HTTPException(status_code=500, detail="Chat data structure is incomplete.")
+    validated_chats = []
 
-    user_chats_sorted = sorted(user_chats, key=lambda x: x['name'])
+    for chat in user_chats:
+        if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]):
+            validated_chats.append(chat)
+        else:
+            pass
+
     return {
-        "meta": {"count": len(user_chats_sorted)},
-        "chats": user_chats_sorted
+        "meta": {"count": len(validated_chats)},
+        "chats": sorted(validated_chats, key=lambda x: x['name'])
     }
 
 
 # GET /chats
-@app.get("/chats", tags=["Chats"], summary="Get all chats",
-         description="Obtains a list of all chats available in the system")
+@app.get("/chats", tags=["Chats"], summary="Get all chats")
 async def get_chats():
-    chats = sorted(data.get('chats', {}).values(), key=lambda x: x['name'])
+    chats = data.get('chats', {}).values()
+
+    # Validate each chat object
+    validated_chats = []
+    for chat in chats:
+        if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]):
+            validated_chats.append(chat)
+        else:
+            # TODO: log or handle the invalid chat object
+            pass
+
+    # Sort chats
+    sorted_chats = sorted(validated_chats, key=lambda x: x['name'])
+
     return {
-        "meta": {"count": len(chats)},
-        "chats": chats
+        "meta": {"count": len(sorted_chats)},
+        "chats": sorted_chats
     }
 
 
