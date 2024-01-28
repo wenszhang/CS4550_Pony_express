@@ -97,22 +97,28 @@ async def get_user_chats(user_id: str):
 
 
 # GET /chats
-@app.get("/chats", tags=["Chats"], summary="Get all chats")
+@app.get("/chats", tags=["Chats"], summary="Get all chats",
+         description="Retrieves a list of all chats")
 async def get_chats():
     chats = data.get('chats', {}).values()
 
-    # Validate each chat object
-    validated_chats = []
+    # Validate
+    formatted_chats = []
     for chat in chats:
         if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]):
-            validated_chats.append(chat)
+            # Format
+            formatted_chats.append({
+                "id": chat["id"],
+                "name": chat["name"],
+                "user_ids": chat["user_ids"],
+                "owner_id": chat["owner_id"],
+                "created_at": chat["created_at"]
+            })
         else:
-            # TODO: log or handle the invalid chat object
+            # TODO: Handle invalid chat objects
             pass
 
-    # Sort chats
-    sorted_chats = sorted(validated_chats, key=lambda x: x['name'])
-
+    sorted_chats = sorted(formatted_chats, key=lambda x: x['name'])
     return {
         "meta": {"count": len(sorted_chats)},
         "chats": sorted_chats
