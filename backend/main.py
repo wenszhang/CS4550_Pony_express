@@ -72,7 +72,7 @@ async def get_user(user_id: str):
 
 # GET /users/{user_id}/chats
 @app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user",
-         description="Retrieves a list of all chats that a specific user")
+         description="Retrieves a list of all chats that a specific user is part of.")
 async def get_user_chats(user_id: str):
     if user_id not in data["users"]:
         raise HTTPException(status_code=404, detail={
@@ -81,11 +81,16 @@ async def get_user_chats(user_id: str):
             "entity_id": user_id
         })
 
-    user_chats = [chat for chat in data.get('chats', {}).values() if user_id in chat['user_ids']]
-    user_chats = sorted(user_chats, key=lambda x: x['name'])
+    user_chats = [chat for chat in data.get('chats', {}).values() if user_id in chat.get('user_ids', [])]
+    for chat in user_chats:
+        # Ensuring each chat has all required fields
+        if not all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]):
+            raise HTTPException(status_code=500, detail="Chat data structure is incomplete.")
+
+    user_chats_sorted = sorted(user_chats, key=lambda x: x['name'])
     return {
-        "meta": {"count": len(user_chats)},
-        "chats": user_chats
+        "meta": {"count": len(user_chats_sorted)},
+        "chats": user_chats_sorted
     }
 
 
