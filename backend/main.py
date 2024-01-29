@@ -72,7 +72,7 @@ async def get_user(user_id: str):
 
 # GET /users/{user_id}/chats
 @app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user",
-         description="Retrieves a list of all chats that a specific user is part of.")
+         description="Retrieves a list of all chats that a specific user participates in.")
 async def get_user_chats(user_id: str):
     if user_id not in data["users"]:
         raise HTTPException(status_code=404, detail={
@@ -81,18 +81,21 @@ async def get_user_chats(user_id: str):
             "entity_id": user_id
         })
 
-    user_chats = [chat for chat in data.get('chats', {}).values() if user_id in chat.get('user_ids', [])]
-    validated_chats = []
+    user_chats = [
+        {
+            "id": chat["id"],
+            "name": chat["name"],
+            "user_ids": chat["user_ids"],
+            "owner_id": chat["owner_id"],
+            "created_at": chat["created_at"]
+        }
+        for chat in data.get('chats', {}).values() if user_id in chat['user_ids']
+    ]
 
-    for chat in user_chats:
-        if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]):
-            validated_chats.append(chat)
-        else:
-            pass
-
+    user_chats = sorted(user_chats, key=lambda x: x['name'])
     return {
-        "meta": {"count": len(validated_chats)},
-        "chats": sorted(validated_chats, key=lambda x: x['name'])
+        "meta": {"count": len(user_chats)},
+        "chats": user_chats
     }
 
 
@@ -151,7 +154,6 @@ async def get_chat(chat_id: str):
         return {"chat": {field: chat[field] for field in required_fields}}
     else:
         raise HTTPException(status_code=500, detail="Chat data structure is incorrect")
-
 
 
 # PUT /chats/{chat_id}
