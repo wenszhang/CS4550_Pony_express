@@ -72,7 +72,7 @@ async def get_user(user_id: str):
 
 # GET /users/{user_id}/chats
 @app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user",
-         description="Retrieves a list of all chats that a specific user")
+         description="Retrieves a list of all chats that a specific user participates in.")
 async def get_user_chats(user_id: str):
     if user_id not in data["users"]:
         raise HTTPException(status_code=404, detail={
@@ -81,7 +81,17 @@ async def get_user_chats(user_id: str):
             "entity_id": user_id
         })
 
-    user_chats = [chat for chat in data.get('chats', {}).values() if user_id in chat['user_ids']]
+    user_chats = [
+        {
+            "id": chat["id"],
+            "name": chat["name"],
+            "user_ids": chat["user_ids"],
+            "owner_id": chat["owner_id"],
+            "created_at": chat["created_at"]
+        }
+        for chat in data.get('chats', {}).values() if user_id in chat['user_ids']
+    ]
+
     user_chats = sorted(user_chats, key=lambda x: x['name'])
     return {
         "meta": {"count": len(user_chats)},
@@ -89,14 +99,40 @@ async def get_user_chats(user_id: str):
     }
 
 
+# Helper function to validate datetime format
+def is_valid_datetime(dt_str):
+    try:
+        datetime.fromisoformat(dt_str)
+        return True
+    except ValueError:
+        return False
+
+
 # GET /chats
 @app.get("/chats", tags=["Chats"], summary="Get all chats",
-         description="Obtains a list of all chats available in the system")
+         description="Retrieves a list of all chats")
 async def get_chats():
-    chats = sorted(data.get('chats', {}).values(), key=lambda x: x['name'])
+    chats = data.get('chats', {}).values()
+
+    # Validate and format chats
+    formatted_chats = []
+    for chat in chats:
+        if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]) and is_valid_datetime(
+                chat["created_at"]):
+            formatted_chats.append({
+                "id": chat["id"],
+                "name": chat["name"],
+                "user_ids": chat["user_ids"],
+                "owner_id": chat["owner_id"],
+                "created_at": chat["created_at"]
+            })
+        else:
+            pass
+
+    sorted_chats = sorted(formatted_chats, key=lambda x: x['name'])
     return {
-        "meta": {"count": len(chats)},
-        "chats": chats
+        "meta": {"count": len(sorted_chats)},
+        "chats": sorted_chats
     }
 
 
@@ -111,7 +147,13 @@ async def get_chat(chat_id: str):
             "entity_name": "Chat",
             "entity_id": chat_id
         })
-    return {"chat": chat}
+
+    # Check for required fields
+    required_fields = ["id", "name", "user_ids", "owner_id", "created_at"]
+    if all(field in chat for field in required_fields):
+        return {"chat": {field: chat[field] for field in required_fields}}
+    else:
+        raise HTTPException(status_code=500, detail="Chat data structure is incorrect")
 
 
 # PUT /chats/{chat_id}
