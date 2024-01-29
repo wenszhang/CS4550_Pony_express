@@ -104,6 +104,7 @@ def is_valid_datetime(dt_str):
     except ValueError:
         return False
 
+
 # GET /chats
 @app.get("/chats", tags=["Chats"], summary="Get all chats",
          description="Retrieves a list of all chats")
@@ -113,7 +114,8 @@ async def get_chats():
     # Validate and format chats
     formatted_chats = []
     for chat in chats:
-        if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]) and is_valid_datetime(chat["created_at"]):
+        if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]) and is_valid_datetime(
+                chat["created_at"]):
             formatted_chats.append({
                 "id": chat["id"],
                 "name": chat["name"],
@@ -142,7 +144,12 @@ async def get_chat(chat_id: str):
             "entity_name": "Chat",
             "entity_id": chat_id
         })
-    return {"chat": chat}
+
+    # Ensure required structure
+    if all(key in chat for key in ["id", "name", "user_ids", "owner_id", "created_at"]):
+        return {"chat": chat}
+    else:
+        raise HTTPException(status_code=500, detail="Chat data structure is incorrect")
 
 
 # PUT /chats/{chat_id}
