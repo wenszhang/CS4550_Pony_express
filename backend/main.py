@@ -145,11 +145,13 @@ async def get_chat(chat_id: str):
             "entity_id": chat_id
         })
 
-    # Ensure required structure
-    if all(key in chat for key in ["id", "name", "user_ids", "owner_id", "created_at"]):
-        return {"chat": chat}
+    # Check for required fields
+    required_fields = ["id", "name", "user_ids", "owner_id", "created_at"]
+    if all(field in chat for field in required_fields):
+        return {"chat": {field: chat[field] for field in required_fields}}
     else:
         raise HTTPException(status_code=500, detail="Chat data structure is incorrect")
+
 
 
 # PUT /chats/{chat_id}
