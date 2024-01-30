@@ -1,7 +1,16 @@
-from fastapi import FastAPI, HTTPException, Response, status
-from typing import Dict
-from datetime import datetime
 import json
+import os
+from datetime import datetime
+from typing import Dict
+from fastapi import FastAPI, HTTPException, Response, status
+
+
+def load_data():
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    fake_db_path = os.path.join(backend_dir, 'fake_db.json')
+    with open(fake_db_path, 'r') as file:
+        return json.load(file)
+
 
 app = FastAPI(
     title="Assignment #1 - FastAPI backend",
@@ -9,9 +18,8 @@ app = FastAPI(
     version="0.0.1"
 )
 
-# Load data from fake_db.json
-with open('fake_db.json', 'r') as file:
-    data = json.load(file)
+# Load data on app startup
+data = load_data()
 
 
 # Helper function to get current datetime in ISO format
@@ -222,3 +230,22 @@ async def get_chat_users(chat_id: str):
         },
         "users": users_sorted
     }
+
+
+# POST /chats
+@app.post("/chats", tags=["Chats"], summary="Create a new chat",
+          description="Creates a new chat with a unique ID",
+          status_code=status.HTTP_201_CREATED)
+async def create_chat(chat_data: Dict[str, str]):
+    chat_id = chat_data.get("id")
+    if chat_id in data["chats"]:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail={
+            "type": "duplicate_entity",
+            "entity_name": "Chat",
+            "entity_id": chat_id
+        })
+
+    chat_data['created_at'] = current_iso_datetime()
+    data["chats"][chat_id] = chat_data
+
+    return {"chat": data["chats"][chat_id]}
