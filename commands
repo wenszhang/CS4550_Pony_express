@@ -6,3 +6,5 @@ you should be able to run your local server
 using the command uvicorn backend.main:app.
 
 python -m unittest test_main.py
+
+poetry run uvicorn backend.main:app --reload
