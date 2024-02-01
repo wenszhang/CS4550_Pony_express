@@ -47,13 +47,13 @@ class TestAPI(TestCase):
         self.assertIsInstance(response.json().get("chats"), list)
 
     def test_get_chat(self):
-        chat_id = "660c7a6bc1324e4488cafabc59529c93"
+        chat_id = "734eeb9ddaec43b2ab6e289a0d472376"
         response = client.get(f"/chats/{chat_id}")
         self.assertEqual(200, response.status_code)
         self.assertEqual(chat_id, response.json().get("chat").get("id"))
 
     def test_update_chat(self):
-        chat_id = "6215e6864e884132baa01f7f972400e2"
+        chat_id = "734eeb9ddaec43b2ab6e289a0d472376"
         updated_data = {"name": "New Chat Name"}
         response = client.put(f"/chats/{chat_id}", json=updated_data)
         self.assertEqual(200, response.status_code)
@@ -65,13 +65,13 @@ class TestAPI(TestCase):
         self.assertEqual(204, response.status_code)
 
     def test_get_chat_messages(self):
-        chat_id = "660c7a6bc1324e4488cafabc59529c93"
+        chat_id = "734eeb9ddaec43b2ab6e289a0d472376"
         response = client.get(f"/chats/{chat_id}/messages")
         self.assertEqual(200, response.status_code)
         self.assertIsInstance(response.json().get("messages"), list)
 
     def test_get_chat_users(self):
-        chat_id = "660c7a6bc1324e4488cafabc59529c93"
+        chat_id = "734eeb9ddaec43b2ab6e289a0d472376"
         response = client.get(f"/chats/{chat_id}/users")
         self.assertEqual(200, response.status_code)
         self.assertIsInstance(response.json().get("users"), list)
