@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from typing import Dict
 from fastapi import FastAPI, HTTPException, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 
 
 def load_data():
@@ -16,6 +17,14 @@ app = FastAPI(
     title="Assignment #1 - FastAPI backend",
     description="API for users and chat functions.",
     version="0.0.1"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # URL of the frontend server
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Load data on app startup
