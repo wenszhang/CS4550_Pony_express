@@ -1,5 +1,5 @@
 import React from 'react';
-import './SelectChat.css'; // If you have specific styles for this component
+import './SelectChat.css';
 
 function SelectChat() {
     return (

@@ -1,13 +1,14 @@
 import React from 'react';
-import { useQuery } from 'react-query';
-import { useParams } from 'react-router-dom';
+import {useQuery} from 'react-query';
+import {useParams} from 'react-router-dom';
 import axios from 'axios';
+import './Chat.css';
 
 function Chat() {
-    const { chatId } = useParams(); // get chatId from the URL parameters
+    const {chatId} = useParams(); // get chatId from the URL parameters
 
     // Fetch messages specific chat
-    const { data, isLoading, error } = useQuery(['messages', chatId], () =>
+    const {data, isLoading, error} = useQuery(['messages', chatId], () =>
         axios.get(`http://localhost:8000/chats/${chatId}/messages`).then(res => res.data)
     );
 
@@ -20,8 +21,13 @@ function Chat() {
             {Array.isArray(data?.messages) ? (
                 data.messages.map((message) => (
                     <div key={message.id} className="message-box">
-                        <div>{message.user_id} {new Date(message.created_at).toDateString()} - {new Date(message.created_at).toLocaleTimeString()}</div>
-                        <div>{message.text}</div>
+                        <div>
+                            <span className="message-username">{message.user_id}</span>
+                            <span className="message-timestamp">
+                            {new Date(message.created_at).toDateString()} - {new Date(message.created_at).toLocaleTimeString()}
+                        </span>
+                        </div>
+                        <div className="message-text">{message.text}</div>
                     </div>
                 ))
             ) : (
