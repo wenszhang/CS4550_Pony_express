@@ -1,0 +1,9 @@
+.select-chat-container {
+    padding: 20px;
+    text-align: center;
+}
+
+.select-chat-container p {
+    color: #666;
+    font-size: 18px;
+}
