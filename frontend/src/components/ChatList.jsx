@@ -12,12 +12,12 @@ function ChatList() {
 
     // Loading state
     if (isLoading) {
-        return <div>Loading...</div>;
+        return <div className="chat-list-box">Loading...</div>;
     }
 
     // Error state
     if (isError) {
-        return <div>An error has occurred: {error.message}</div>;
+        return <div className="chat-list-box">An error has occurred: {error.message}</div>;
     }
 
     // If messages is an array before rendering
@@ -25,12 +25,10 @@ function ChatList() {
         <div className="chat-list">
             {Array.isArray(chats) && chats.length > 0 ? (
                 chats.map((chat) => (
-                    <Link to={`/chats/${chat.id}`} key={chat.id} className="chat-box">
-                        <div className="chat-layout">
-                            <div className="chat-name">{chat.name}</div>
-                            <div className="chat-users">{chat.user_ids.join(', ')}</div>
-                            <div className="chat-created">Created at: {new Date(chat.created_at).toDateString()}</div>
-                        </div>
+                    <Link to={`/chats/${chat.id}`} key={chat.id} className="chat-list-box">
+                        <div className="chat-name">{chat.name}</div>
+                        <div className="chat-users">{chat.user_ids.join(', ')}</div>
+                        <div className="chat-created">Created at: {new Date(chat.created_at).toDateString()}</div>
                     </Link>
                 ))
             ) : (

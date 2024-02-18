@@ -6,12 +6,12 @@
 
 .app-container {
   display: flex;
-  min-width: 100%;
   height: 100vh;
 }
 
 .chat-list-column {
-  flex: 0 0 18.75rem;
+  flex: 0 0 18.75rem; /* flex-basis set to 18.75rem */
+  max-width: 18.75rem; /* max-width set to the same value to limit the width */
   overflow-y: auto;
   border-right: 1px solid #ccc;
 }
