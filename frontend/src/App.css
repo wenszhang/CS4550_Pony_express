@@ -1,4 +1,5 @@
 #root {
+  width: 80rem;
   max-width: 80rem;
   margin: 0 auto;
   padding: 2rem;
@@ -10,14 +11,15 @@
 }
 
 .chat-list-column {
-  flex: 0 0 18.75rem; /* flex-basis set to 18.75rem */
-  max-width: 18.75rem; /* max-width set to the same value to limit the width */
+  flex: 0 0 18.75rem;
+  max-width: 18.75rem;
   overflow-y: auto;
   border-right: 1px solid #ccc;
 }
 
-.chat-messages-column {
-  flex-grow: 1;
+.chat-list-column {
+  flex: 0 0 18.75rem;
+  max-width: 18.75rem;
   overflow-y: auto;
-  word-wrap: break-word;
+  border-right: 1px solid #ccc;
 }
