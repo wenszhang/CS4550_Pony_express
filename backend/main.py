@@ -62,7 +62,7 @@ async def get_user(user_id: int, session: Session = Depends(get_session)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    return UserPublic.from_orm(user)
+    return {"user": user}
 
 
 # GET /users/{user_id}/chats
