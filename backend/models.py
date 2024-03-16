@@ -79,3 +79,12 @@ class UsersResponse(BaseModel):
 
 class UserResponse(BaseModel):
     user: UserPublic
+
+
+class ChatsMeta(BaseModel):
+    count: int
+
+
+class ChatsResponse(BaseModel):
+    meta: ChatsMeta
+    chats: List[ChatPublic]

@@ -9,7 +9,8 @@ from sqlmodel import select, Session
 
 from .auth import get_current_user, UserUpdate, auth_router
 from .database import create_db_and_tables, get_session
-from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase, UserResponse
+from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase, UserResponse, \
+    ChatsResponse, ChatsMeta
 from .schema import UserInDB, ChatInDB, MessageInDB
 
 
@@ -65,7 +66,7 @@ async def get_user(user_id: int, session: Session = Depends(get_session)):
 # GET /users/{user_id}/chats
 @app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user",
          description="Retrieves a list of all chats that a user participates in",
-         response_model=List[ChatPublic])
+         response_model=ChatsResponse)
 async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
     user = session.get(UserInDB, user_id)
     if not user:
@@ -75,42 +76,27 @@ async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
         )
 
     chat_records = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()
+    chats = [ChatPublic.from_orm(chat_record) for chat_record in chat_records]
 
-    # Convert each ChatInDB instance to ChatPublic instance
-    chats = []
-    for chat_record in chat_records:
-        owner_user_base = UserBase.from_orm(chat_record.owner)  # Convert UserInDB to UserBase
-        chat_public = ChatPublic.from_orm(chat_record)
-        chat_public.owner = owner_user_base  # Set the owner to the converted UserBase
-        chats.append(chat_public)
-
-    return chats
-
-
-# Helper function to validate datetime format
-def is_valid_datetime(dt_str):
-    try:
-        datetime.fromisoformat(dt_str)
-        return True
-    except ValueError:
-        return False
+    # Wrap the chats in the ChatsResponse model
+    response = ChatsResponse(meta=ChatsMeta(count=len(chats)), chats=chats)
+    return response
 
 
 # GET /chats
 @app.get("/chats", tags=["Chats"], summary="Get all chats",
          description="Retrieves a list of all chats",
-         response_model=List[ChatPublic])
+         response_model=ChatsResponse)
 async def get_chats(session: Session = Depends(get_session)):
     chat_records = session.exec(select(ChatInDB).options(joinedload(ChatInDB.owner))).all()
+    chats = [ChatPublic.from_orm(chat_record) for chat_record in chat_records]
 
-    chats = []
-    for chat_record in chat_records:
-        owner_user_base = UserBase.from_orm(chat_record.owner)
-        chat_public = ChatPublic.from_orm(chat_record)
-        chat_public.owner = owner_user_base
-        chats.append(chat_public)
+    response = ChatsResponse(
+        meta=ChatsMeta(count=len(chats)),
+        chats=chats
+    )
 
-    return chats
+    return response
 
 
 # GET /chats/{chat_id}
