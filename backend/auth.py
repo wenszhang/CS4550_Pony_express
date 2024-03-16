@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 from typing import Optional
 
@@ -24,7 +24,7 @@ auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 # Models ========================================
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, description="The new username for the user")
-    email: Optional[EmailStr] = Field(None, description="The new email address for the user")
+    email: Optional[str] = Field(None, description="The new email address for the user")
 
 
 # Methods ========================================

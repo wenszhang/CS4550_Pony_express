@@ -14,7 +14,7 @@ from .schema import UserInDB, ChatInDB, MessageInDB
 
 
 @asynccontextmanager
-async def lifespan():
+async def lifespan(app: FastAPI):
     create_db_and_tables()
     yield
 
