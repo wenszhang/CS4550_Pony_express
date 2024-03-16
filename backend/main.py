@@ -100,7 +100,6 @@ async def get_chats(session: Session = Depends(get_session)):
 @app.get("/chats/{chat_id}", tags=["Chats"], summary="Get a chat by ID",
          description="Fetches details of a specific chat by ID")
 async def get_chat(chat_id: int, include: Optional[List[str]] = Query(None), session: Session = Depends(get_session)):
-    # Check if chat exists
     chat = session.get(ChatInDB, chat_id)
     if not chat:
         raise HTTPException(
@@ -140,45 +139,27 @@ async def get_chat(chat_id: int, include: Optional[List[str]] = Query(None), ses
 
 
 # PUT /chats/{chat_id}
-@app.get("/chats/{chat_id}", tags=["Chats"], summary="Get a chat by ID",
-         description="Fetches details of a specific chat by ID")
-async def get_chat(chat_id: int, include: Optional[List[str]] = Query(None), session: Session = Depends(get_session)):
+@app.put("/chats/{chat_id}", tags=["Chats"], summary="Update a chat by ID",
+         description="Updates the details of an existing chat",
+         response_model=ChatResponse)
+async def update_chat(chat_id: int, update_data: Dict[str, str], session: Session = Depends(get_session)):
     chat = session.get(ChatInDB, chat_id)
     if not chat:
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "type": "entity_not_found",
-                "entity_name": "Chat",
-                "entity_id": chat_id
-            }
-        )
+        raise HTTPException(status_code=404, detail={
+            "type": "entity_not_found",
+            "entity_name": "Chat",
+            "entity_id": chat_id
+        })
+    if 'name' in update_data:
+        chat.name = update_data['name']
 
-    messages = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).all()
-    message_count = len(messages)
-
-    users = session.exec(
-        select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)
-    ).all()
-    user_count = len(users)
+    session.add(chat)
+    session.commit()
+    session.refresh(chat)
 
     chat_response = ChatPublic.from_orm(chat)
 
-    response = {
-        "meta": {
-            "message_count": message_count,
-            "user_count": user_count
-        },
-        "chat": chat_response.dict()
-    }
-
-    if include:
-        if "messages" in include:
-            response["messages"] = [MessagePublic.from_orm(msg).dict() for msg in messages]
-        if "users" in include:
-            response["users"] = [UserPublic.from_orm(user).dict() for user in users]
-
-    return response
+    return {"chat": chat_response.dict()}
 
 
 # GET /chats/{chat_id}/messages

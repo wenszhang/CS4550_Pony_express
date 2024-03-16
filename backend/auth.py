@@ -10,7 +10,7 @@ from typing import Optional
 
 from .database import get_session
 from .schema import UserInDB
-from .models import UserCreate, Token, UserPublic
+from .models import UserCreate, Token, UserPublic, UserResponse
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 access_token_duration = 30  # Minutes
@@ -74,7 +74,7 @@ def create_access_token(*, data: dict, expires_delta: timedelta):
 # Auth routes ========================================
 
 # POST /auth/registration
-@auth_router.post("/registration", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+@auth_router.post("/registration", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(
         user: UserCreate,
         session: Session = Depends(get_session)
@@ -109,7 +109,7 @@ def register_user(
             }
         )
 
-    # Hash the user's password
+    # Hash the password
     hashed_password = get_password_hash(user.password)
 
     # Create new user instance
@@ -125,7 +125,7 @@ def register_user(
     session.refresh(new_user)
 
     # Return the public view of the user
-    return UserPublic.from_orm(new_user)
+    return UserResponse(user=UserPublic.from_orm(new_user))
 
 
 # POST /auth/token
