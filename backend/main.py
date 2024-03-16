@@ -10,7 +10,7 @@ from sqlmodel import select, Session
 from .auth import get_current_user, UserUpdate, auth_router
 from .database import create_db_and_tables, get_session
 from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase, UserResponse, \
-    ChatsResponse, ChatsMeta, MessagesResponse
+    ChatsResponse, ChatsMeta, MessagesResponse, ChatResponse
 from .schema import UserInDB, ChatInDB, MessageInDB
 
 
@@ -35,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-app.include_router(auth_router, prefix="/auth")
+app.include_router(auth_router)
 
 
 # User routes ========================================
@@ -130,7 +130,6 @@ async def get_chat(chat_id: int, include: Optional[List[str]] = Query(None), ses
         "chat": chat_response.dict()
     }
 
-    # Dynamically add messages and users to the response based on 'include' query parameter
     if include:
         if "messages" in include:
             response["messages"] = [MessagePublic.from_orm(msg).dict() for msg in messages]
@@ -141,26 +140,45 @@ async def get_chat(chat_id: int, include: Optional[List[str]] = Query(None), ses
 
 
 # PUT /chats/{chat_id}
-@app.put("/chats/{chat_id}", tags=["Chats"], summary="Update a chat name by ID",
-         description="Updates the name of an existing chat",
-         response_model=ChatPublic)
-async def update_chat(chat_id: int, update_data: Dict[str, str], session: Session = Depends(get_session)):
+@app.get("/chats/{chat_id}", tags=["Chats"], summary="Get a chat by ID",
+         description="Fetches details of a specific chat by ID")
+async def get_chat(chat_id: int, include: Optional[List[str]] = Query(None), session: Session = Depends(get_session)):
     chat = session.get(ChatInDB, chat_id)
     if not chat:
-        raise HTTPException(status_code=404, detail={
-            "type": "entity_not_found",
-            "entity_name": "Chat",
-            "entity_id": chat_id
-        })
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "type": "entity_not_found",
+                "entity_name": "Chat",
+                "entity_id": chat_id
+            }
+        )
 
-    if 'name' in update_data:
-        chat.name = update_data['name']
+    messages = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).all()
+    message_count = len(messages)
 
-    session.add(chat)
-    session.commit()
-    session.refresh(chat)
+    users = session.exec(
+        select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)
+    ).all()
+    user_count = len(users)
 
-    return {"chat": chat}
+    chat_response = ChatPublic.from_orm(chat)
+
+    response = {
+        "meta": {
+            "message_count": message_count,
+            "user_count": user_count
+        },
+        "chat": chat_response.dict()
+    }
+
+    if include:
+        if "messages" in include:
+            response["messages"] = [MessagePublic.from_orm(msg).dict() for msg in messages]
+        if "users" in include:
+            response["users"] = [UserPublic.from_orm(user).dict() for user in users]
+
+    return response
 
 
 # GET /chats/{chat_id}/messages
@@ -185,20 +203,17 @@ async def get_chat_messages(chat_id: int, session: Session = Depends(get_session
 
 # GET /chats/{chat_id}/users
 @app.get("/chats/{chat_id}/users", tags=["Chats"], summary="Get users in a specific chat",
-         description="Fetches a list of users participating in a chat",
+         description="Retrieves all users from a chat, identified by ID",
          response_model=UsersResponse)
 async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
     chat = session.get(ChatInDB, chat_id)
     if not chat:
-        raise HTTPException(status_code=404, detail={
-            "type": "entity_not_found",
-            "entity_name": "Chat",
-            "entity_id": chat_id
-        })
+        raise HTTPException(status_code=404, detail="Chat not found")
 
-    result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()  # type: ignore
-    users = [UserPublic.from_orm(user) for user in result]
-    return UsersResponse(meta=Meta(count=len(users)), users=users)
+    users = session.exec(select(UserInDB).where(UserInDB.chats.any(id=chat_id))).all()  # type: ignore
+    result = [UserPublic.from_orm(user) for user in users]
+
+    return UsersResponse(meta=Meta(count=len(result)), users=result)
 
 
 # POST /chats
