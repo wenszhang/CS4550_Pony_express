@@ -59,7 +59,7 @@ async def get_users(session: Session = Depends(get_session)):
 async def get_current_user_route(current_user: UserInDB = Depends(get_current_user)):
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
-    return current_user
+    return {"user": current_user}
 
 
 # GET /users/{user_id}
