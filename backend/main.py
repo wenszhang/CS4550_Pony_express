@@ -40,6 +40,16 @@ app.include_router(auth_router)
 
 # User routes ========================================
 
+# GET /users/me (moved to be before /users/{user_id} to avoid conflict)
+@app.get("/users/me", tags=["Users"], summary="Get the current user",
+         description="Returns the current user",
+         response_model=UserPublic)
+async def get_current_user_route(current_user: UserInDB = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"user": current_user}
+
+
 # GET /users
 @app.get("/users", tags=["Users"], summary="Get all users",
          description="Retrieves a list of all users in the system",
@@ -51,15 +61,6 @@ async def get_users(session: Session = Depends(get_session)):
 
 
 # POST /auth/registration in auth.py
-
-# GET /users/me (moved to be before /users/{user_id} to avoid conflict)
-@app.get("/users/me", tags=["Users"], summary="Get the current user",
-         description="Returns the current user",
-         response_model=UserPublic)
-async def get_current_user_route(current_user: UserInDB = Depends(get_current_user)):
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": current_user}
 
 
 # GET /users/{user_id}
@@ -255,6 +256,7 @@ async def update_current_user(
     session.refresh(current_user)
 
     return UserResponse(user=UserPublic.from_orm(current_user))
+
 
 # POST /chats/{chat_id}/messages
 @app.post("/chats/{chat_id}/messages", tags=["Chats"], summary="Create a new message in a chat",
