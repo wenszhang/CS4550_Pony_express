@@ -10,7 +10,7 @@ from sqlmodel import select, Session
 from .auth import get_current_user, UserUpdate, auth_router
 from .database import create_db_and_tables, get_session
 from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase, UserResponse, \
-    ChatsResponse, ChatsMeta, MessagesResponse, ChatResponse
+    ChatsResponse, ChatsMeta, MessagesResponse, ChatResponse, MessageResponse
 from .schema import UserInDB, ChatInDB, MessageInDB
 
 
@@ -260,7 +260,7 @@ async def update_current_user(
 # POST /chats/{chat_id}/messages
 @app.post("/chats/{chat_id}/messages", tags=["Chats"], summary="Create a new message in a chat",
           description="Creates a new message in the chat, authored by the current user",
-          response_model=MessagePublic, status_code=status.HTTP_201_CREATED)
+          response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def create_message(
         chat_id: int,
         message_data: MessageCreate,
@@ -296,4 +296,4 @@ async def create_message(
         select(MessageInDB).where(MessageInDB.id == new_message.id)
     ).first()
 
-    return {"message": message_public}
+    return MessageResponse(message=MessagePublic.from_orm(message_public))
