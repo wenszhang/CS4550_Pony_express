@@ -1,12 +1,15 @@
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Dict
-from fastapi import FastAPI, HTTPException, Response, status, APIRouter, Depends
+from typing import Dict, List, Optional
+from fastapi import FastAPI, HTTPException, Response, status, APIRouter, Depends, Body, Query
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import joinedload
 from sqlmodel import select, Session
 
+from backend.auth import get_current_user, UserUpdate
 from backend.database import create_db_and_tables, get_session
-from backend.schema import UserInDB
+from backend.models import UserPublic, ChatPublic, MessagePublic, MessageCreate
+from backend.schema import UserInDB, ChatInDB, MessageInDB
 
 
 @asynccontextmanager
@@ -30,89 +33,67 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-app = APIRouter()
 
-
-# Helper function to get current datetime in ISO format
-def current_iso_datetime():
-    return datetime.now().isoformat()
-
+# User routes ========================================
 
 # GET /users
 @app.get("/users", tags=["Users"], summary="Get all users",
-         description="Retrieves a list of all users in the system")
+         description="Retrieves a list of all users in the system",
+         response_model=List[UserPublic])
 async def get_users(session: Session = Depends(get_session)):
     users = session.exec(select(UserInDB)).all()
+    result = [UserPublic.from_orm(user) for user in users]
     return {
         "meta": {
-            "count": len(users)
+            "count": len(result)
         },
-        "users": users
+        "users": result
     }
 
 
-# POST /users
-@app.post("/users", tags=["Users"], summary="Create a new user",
-          description="Creates a new user with a unique ID")
-async def create_user(user: Dict[str, str]):
-    user_id = user.get("id")
-    if user_id in data["users"]:
-        raise HTTPException(status_code=422, detail={
-            "type": "duplicate_entity",
-            "entity_name": "User",
-            "entity_id": user_id
-        })
-
-    created_at = current_iso_datetime()
-    data["users"][user_id] = {
-        "id": user_id,
-        "created_at": created_at
-    }
-    return {
-        "user": data["users"][user_id]
-    }
-
+# POST /auth/registration
 
 # GET /users/{user_id}
 @app.get("/users/{user_id}", tags=["Users"], summary="Get a user by ID",
-         description="Fetches details of a user by ID")
-async def get_user(user_id: str):
-    user = data["users"].get(user_id)
+         description="Fetches details of a user by ID",
+         response_model=UserPublic)
+async def get_user(user_id: int, session: Session = Depends(get_session)):
+    user = session.exec(select(UserInDB).where(UserInDB.id == user_id)).first()
     if not user:
-        raise HTTPException(status_code=404, detail={
-            "type": "entity_not_found",
-            "entity_name": "User",
-            "entity_id": user_id
-        })
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "type": "entity_not_found",
+                "entity_name": "User",
+                "entity_id": user_id
+            }
+        )
     return {"user": user}
 
 
 # GET /users/{user_id}/chats
 @app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user",
-         description="Retrieves a list of all chats that a user participates in")
-async def get_user_chats(user_id: str):
-    if user_id not in data["users"]:
-        raise HTTPException(status_code=404, detail={
-            "type": "entity_not_found",
-            "entity_name": "User",
-            "entity_id": user_id
-        })
+         description="Retrieves a list of all chats that a user participates in",
+         response_model=List[ChatPublic])
+async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
+    user = session.get(UserInDB, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "type": "entity_not_found",
+                "entity_name": "User",
+                "entity_id": user_id
+            }
+        )
 
-    user_chats = [
-        {
-            "id": chat["id"],
-            "name": chat["name"],
-            "user_ids": chat["user_ids"],
-            "owner_id": chat["owner_id"],
-            "created_at": chat["created_at"]
-        }
-        for chat in data.get('chats', {}).values() if user_id in chat['user_ids']
-    ]
+    result = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()
 
-    user_chats = sorted(user_chats, key=lambda x: x['name'])
+    chats = [ChatPublic.from_orm(chat) for chat in result]
+
     return {
-        "meta": {"count": len(user_chats)},
-        "chats": user_chats
+        "meta": {"count": len(chats)},
+        "chats": chats
     }
 
 
@@ -127,136 +108,230 @@ def is_valid_datetime(dt_str):
 
 # GET /chats
 @app.get("/chats", tags=["Chats"], summary="Get all chats",
-         description="Retrieves a list of all chats")
-async def get_chats():
-    chats = data.get('chats', {}).values()
+         description="Retrieves a list of all chats",
+         response_model=List[ChatPublic])
+async def get_chats(session: Session = Depends(get_session)):
+    result = session.exec(select(ChatInDB).options(joinedload(ChatInDB.owner))).all()
 
-    # Validate and format chats
-    formatted_chats = []
-    for chat in chats:
-        if all(k in chat for k in ["id", "name", "user_ids", "owner_id", "created_at"]) and is_valid_datetime(
-                chat["created_at"]):
-            formatted_chats.append({
-                "id": chat["id"],
-                "name": chat["name"],
-                "user_ids": chat["user_ids"],
-                "owner_id": chat["owner_id"],
-                "created_at": chat["created_at"]
-            })
-        else:
-            pass
+    chats = [ChatPublic.from_orm(chat) for chat in result]
 
-    sorted_chats = sorted(formatted_chats, key=lambda x: x['name'])
     return {
-        "meta": {"count": len(sorted_chats)},
-        "chats": sorted_chats
+        "meta": {"count": len(chats)},
+        "chats": chats
     }
 
 
 # GET /chats/{chat_id}
 @app.get("/chats/{chat_id}", tags=["Chats"], summary="Get a chat by ID",
          description="Fetches details of a specific chat by ID")
-async def get_chat(chat_id: str):
-    chat = data["chats"].get(chat_id)
+async def get_chat(
+        chat_id: int,
+        include: Optional[List[str]] = Query(None),
+        session: Session = Depends(get_session)
+):
+    # Check if chat exists
+    chat = session.get(ChatInDB, chat_id)
     if not chat:
-        raise HTTPException(status_code=404, detail={
-            "type": "entity_not_found",
-            "entity_name": "Chat",
-            "entity_id": chat_id
-        })
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "type": "entity_not_found",
+                "entity_name": "Chat",
+                "entity_id": chat_id
+            }
+        )
 
-    # Check for required fields
-    required_fields = ["id", "name", "user_ids", "owner_id", "created_at"]
-    if all(field in chat for field in required_fields):
-        return {"chat": {field: chat[field] for field in required_fields}}
-    else:
-        raise HTTPException(status_code=500, detail="Chat data structure is incorrect")
+    # Fetch chat metadata
+    message_count = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).count()
+    user_count = session.exec(select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)).count()
+
+    response = {
+        "meta": {
+            "message_count": message_count,
+            "user_count": user_count
+        },
+        "chat": ChatPublic.from_orm(chat)
+    }
+
+    # Include messages if requested
+    if 'messages' in (include or []):
+        messages = session.exec(
+            select(MessageInDB).where(MessageInDB.chat_id == chat_id).options(joinedload(MessageInDB.user))).all()
+        response["messages"] = [MessagePublic.from_orm(msg) for msg in messages]
+
+    # Include users if requested
+    if 'users' in (include or []):
+        users = session.exec(select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)).all()
+        response["users"] = [UserPublic.from_orm(user) for user in users]
+
+    return response
 
 
 # PUT /chats/{chat_id}
 @app.put("/chats/{chat_id}", tags=["Chats"], summary="Update a chat name by ID",
-         description="Updates the name of an existing chat")
-async def update_chat(chat_id: str, update_data: Dict[str, str]):
-    chat = data["chats"].get(chat_id)
+         description="Updates the name of an existing chat",
+         response_model=ChatPublic)
+async def update_chat(chat_id: int, update_data: Dict[str, str], session: Session = Depends(get_session)):
+    chat = session.get(ChatInDB, chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail={
             "type": "entity_not_found",
             "entity_name": "Chat",
             "entity_id": chat_id
         })
-    chat["name"] = update_data.get("name", chat["name"])
+
+    if 'name' in update_data:
+        chat.name = update_data['name']
+
+    session.add(chat)
+    session.commit()
+    session.refresh(chat)
+
     return {"chat": chat}
-
-
-# DELETE /chats/{chat_id}
-@app.delete("/chats/{chat_id}", tags=["Chats"], summary="Delete a chat by ID",
-            description="Deletes a chat from the system by ID")
-async def delete_chat(chat_id: str):
-    if chat_id not in data["chats"]:
-        raise HTTPException(status_code=404, detail={
-            "type": "entity_not_found",
-            "entity_name": "Chat",
-            "entity_id": chat_id
-        })
-    del data["chats"][chat_id]
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # GET /chats/{chat_id}/messages
 @app.get("/chats/{chat_id}/messages", tags=["Chats"], summary="Get messages for a specific chat",
-         description="Retrieves all messages from a chat, identified by ID")
-async def get_chat_messages(chat_id: str):
-    if chat_id not in data["chats"]:
+         description="Retrieves all messages from a chat, identified by ID",
+         response_model=List[MessagePublic])
+async def get_chat_messages(chat_id: int, session: Session = Depends(get_session)):
+    chat = session.get(ChatInDB, chat_id)
+    if not chat:
         raise HTTPException(status_code=404, detail={
             "type": "entity_not_found",
             "entity_name": "Chat",
             "entity_id": chat_id
         })
-    messages = sorted(data["chats"][chat_id].get("messages", []),
-                      key=lambda x: x['created_at'])
+
+    messages = session.exec(
+        select(MessageInDB).where(MessageInDB.chat_id == chat_id).options(joinedload(MessageInDB.user))).all()
+    result = [MessagePublic.from_orm(msg) for msg in messages]
+
     return {
         "meta": {
-            "count": len(messages),
+            "count": len(result),
         },
-        "messages": messages
+        "messages": result
     }
 
 
 # GET /chats/{chat_id}/users
 @app.get("/chats/{chat_id}/users", tags=["Chats"], summary="Get users in a specific chat",
-         description="Fetches a list of users participating in a chat")
-async def get_chat_users(chat_id: str):
-    if chat_id not in data["chats"]:
+         description="Fetches a list of users participating in a chat",
+         response_model=List[UserPublic])
+async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
+    chat = session.get(ChatInDB, chat_id)
+    if not chat:
         raise HTTPException(status_code=404, detail={
             "type": "entity_not_found",
             "entity_name": "Chat",
             "entity_id": chat_id
         })
-    user_ids = data["chats"][chat_id].get("user_ids", [])
-    users = [data["users"][uid] for uid in user_ids if uid in data["users"]]
-    users_sorted = sorted(users, key=lambda x: x['id'])
+
+    result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()
+
+    users = [UserPublic.from_orm(user) for user in result]
+
     return {
         "meta": {
-            "count": len(users_sorted),
+            "count": len(users),
         },
-        "users": users_sorted
+        "users": users
     }
 
 
 # POST /chats
-@app.post("/chats", tags=["Chats"], summary="Create a new chat",
-          description="Creates a new chat with a unique ID",
-          status_code=status.HTTP_201_CREATED)
-async def create_chat(chat_data: Dict[str, str]):
-    chat_id = chat_data.get("id")
-    if chat_id in data["chats"]:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail={
-            "type": "duplicate_entity",
-            "entity_name": "Chat",
-            "entity_id": chat_id
-        })
+# @app.post("/chats", tags=["Chats"], summary="Create a new chat",
+#           description="Creates a new chat with a unique ID",
+#           status_code=status.HTTP_201_CREATED)
+# async def create_chat(chat_data: Dict[str, str]):
+#     chat_id = chat_data.get("id")
+#     if chat_id in data["chats"]:
+#         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail={
+#             "type": "duplicate_entity",
+#             "entity_name": "Chat",
+#             "entity_id": chat_id
+#         })
+#
+#     chat_data['created_at'] = datetime.now().isoformat()
+#     data["chats"][chat_id] = chat_data
+#
+#     return {"chat": data["chats"][chat_id]}
 
-    chat_data['created_at'] = current_iso_datetime()
-    data["chats"][chat_id] = chat_data
+# New routes from A3 ========================================
 
-    return {"chat": data["chats"][chat_id]}
+@app.get("/users/me", tags=["Users"], summary="Get the current user",
+         description="Returns the current user",
+         response_model=UserPublic)
+async def get_current_user_route(current_user: UserInDB = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return current_user
+
+
+@app.put("/users/me", tags=["Users"], summary="Update the current user",
+         description="Updates the username or email of the current user",
+         response_model=UserPublic)
+async def update_current_user(
+        update_data: UserUpdate = Body(...),
+        current_user: UserInDB = Depends(get_current_user),
+        session: Session = Depends(get_session)
+):
+    if update_data.username:
+        existing_user = session.exec(select(UserInDB).where(UserInDB.username == update_data.username)).first()
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is already in use.")
+        current_user.username = update_data.username
+
+    if update_data.email:
+        existing_user = session.exec(select(UserInDB).where(UserInDB.email == update_data.email)).first()
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already in use.")
+        current_user.email = update_data.email
+
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+
+    return {"user": current_user}
+
+
+@app.post("/chats/{chat_id}/messages", tags=["Chats"], summary="Create a new message in a chat",
+          description="Creates a new message in the chat, authored by the current user",
+          response_model=MessagePublic, status_code=status.HTTP_201_CREATED)
+async def create_message(
+        chat_id: int,
+        message_data: MessageCreate,
+        current_user: UserInDB = Depends(get_current_user),
+        session: Session = Depends(get_session)
+):
+    # Check if the chat exists
+    chat = session.get(ChatInDB, chat_id)
+    if not chat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "type": "entity_not_found",
+                "entity_name": "Chat",
+                "entity_id": chat_id
+            }
+        )
+
+    # Create new message
+    new_message = MessageInDB(
+        text=message_data.text,
+        chat_id=chat_id,
+        user_id=current_user.id,
+        created_at=datetime.utcnow()
+    )
+
+    session.add(new_message)
+    session.commit()
+    session.refresh(new_message)
+
+    # Get the public representation of the message
+    message_public = session.exec(
+        select(MessageInDB).where(MessageInDB.id == new_message.id)
+    ).first()
+
+    return {"message": message_public}
