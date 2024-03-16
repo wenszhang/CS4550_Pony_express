@@ -64,23 +64,21 @@ async def get_user(user_id: int, session: Session = Depends(get_session)):
 
 
 # GET /users/{user_id}/chats
-@app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user",
-         description="Retrieves a list of all chats that a user participates in",
-         response_model=ChatsResponse)
-async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
-    user = session.get(UserInDB, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+@app.get("/chats/{chat_id}/users", tags=["Chats"], summary="Get users in a specific chat",
+         description="Fetches a list of users participating in a chat",
+         response_model=UsersResponse)
+async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
+    chat = session.get(ChatInDB, chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail={
+            "type": "entity_not_found",
+            "entity_name": "Chat",
+            "entity_id": chat_id
+        })
 
-    chat_records = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()
-    chats = [ChatPublic.from_orm(chat_record) for chat_record in chat_records]
-
-    # Wrap the chats in the ChatsResponse model
-    response = ChatsResponse(meta=ChatsMeta(count=len(chats)), chats=chats)
-    return response
+    result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()  # type: ignore
+    users = [UserPublic.from_orm(user) for user in result]
+    return UsersResponse(meta=Meta(count=len(users)), users=users)
 
 
 # GET /chats
