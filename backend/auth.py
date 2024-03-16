@@ -15,7 +15,10 @@ from .models import UserCreate, Token, UserPublic, UserResponse
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 access_token_duration = 3600  # seconds
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
-jwt_key = os.environ.get("JWT_KEY", default="secret")
+jwt_key = os.environ.get(
+    "JWT_KEY",
+    default="any string you want for a dev JWT key",
+)
 jwt_alg = "HS256"
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
