@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from datetime import datetime
 
 
@@ -29,10 +29,6 @@ class UserPublic(BaseModel):
         orm_mode = True
         from_attributes = True
 
-    @field_validator('*')
-    def model_validate(self, v):
-        return v
-
 
 class UserBase(BaseModel):
     id: int
@@ -50,10 +46,6 @@ class ChatPublic(BaseModel):
     class Config:
         orm_mode = True
 
-    @field_validator('*')
-    def model_validate(self, v):
-        return v
-
 
 class MessagePublic(BaseModel):
     id: int
@@ -64,10 +56,6 @@ class MessagePublic(BaseModel):
 
     class Config:
         orm_mode = True
-
-    @field_validator('*')
-    def model_validate(self, v):
-        return v
 
 
 class MessageCreate(BaseModel):

@@ -45,7 +45,7 @@ app.include_router(auth_router, prefix="/auth")
          response_model=UsersResponse)
 async def get_users(session: Session = Depends(get_session)):
     users = session.exec(select(UserInDB)).all()
-    result = [UserPublic.model_validate(user) for user in users]
+    result = [UserPublic.from_orm(user) for user in users]
     return UsersResponse(meta=Meta(count=len(result)), users=result)
 
 
@@ -87,7 +87,7 @@ async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
 
     result = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()  # type: ignore
 
-    chats = [ChatPublic.model_validate(chat) for chat in result]
+    chats = [ChatPublic.from_orm(chat) for chat in result]
 
     return {
         "meta": {"count": len(chats)},
@@ -111,7 +111,7 @@ def is_valid_datetime(dt_str):
 async def get_chats(session: Session = Depends(get_session)):
     result = session.exec(select(ChatInDB).options(joinedload(ChatInDB.owner))).all()
 
-    chats = [ChatPublic.model_validate(chat) for chat in result]
+    chats = [ChatPublic.from_orm(chat) for chat in result]
 
     return {
         "meta": {"count": len(chats)},
@@ -143,24 +143,25 @@ async def get_chat(
     message_count = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).count()  # type: ignore
     user_count = session.exec(  # type: ignore
         select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)).count()
+
     response = {
         "meta": {
             "message_count": message_count,
             "user_count": user_count
         },
-        "chat": ChatPublic.model_validate(chat)
+        "chat": ChatPublic.from_orm(chat)
     }
 
     # Include messages if requested
     if 'messages' in (include or []):
         messages = session.exec(
             select(MessageInDB).where(MessageInDB.chat_id == chat_id).options(joinedload(MessageInDB.user))).all()
-        response["messages"] = [MessagePublic.model_validate(msg) for msg in messages]
+        response["messages"] = [MessagePublic.from_orm(msg) for msg in messages]
 
     # Include users if requested
     if 'users' in (include or []):
         users = session.exec(select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)).all()
-        response["users"] = [UserPublic.model_validate(user) for user in users]
+        response["users"] = [UserPublic.from_orm(user) for user in users]
 
     return response
 
@@ -203,7 +204,7 @@ async def get_chat_messages(chat_id: int, session: Session = Depends(get_session
 
     messages = session.exec(
         select(MessageInDB).where(MessageInDB.chat_id == chat_id).options(joinedload(MessageInDB.user))).all()
-    result = [MessagePublic.model_validate(msg) for msg in messages]
+    result = [MessagePublic.from_orm(msg) for msg in messages]
 
     return {
         "meta": {
@@ -228,7 +229,7 @@ async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
 
     result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()  # type: ignore
 
-    users = [UserPublic.model_validate(user) for user in result]
+    users = [UserPublic.from_orm(user) for user in result]
 
     return {
         "meta": {
