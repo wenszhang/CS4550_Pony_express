@@ -1,5 +1,4 @@
 from sqlmodel import create_engine, Session, SQLModel
-from .schema import UserInDB, ChatInDB, MessageInDB, UserChatLinkInDB
 
 # Create the SQLite database engine
 engine = create_engine(

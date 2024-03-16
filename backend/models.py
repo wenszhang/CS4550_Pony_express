@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import List
+
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 
 
@@ -25,6 +27,11 @@ class UserPublic(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
+
+    @field_validator('*')
+    def model_validate(self, v):
+        return v
 
 
 class UserBase(BaseModel):
@@ -43,6 +50,10 @@ class ChatPublic(BaseModel):
     class Config:
         orm_mode = True
 
+    @field_validator('*')
+    def model_validate(self, v):
+        return v
+
 
 class MessagePublic(BaseModel):
     id: int
@@ -54,6 +65,21 @@ class MessagePublic(BaseModel):
     class Config:
         orm_mode = True
 
+    @field_validator('*')
+    def model_validate(self, v):
+        return v
+
 
 class MessageCreate(BaseModel):
     text: str
+
+
+# Assuming Meta is another Pydantic model you've defined to encapsulate meta information
+class Meta(BaseModel):
+    count: int
+
+
+# The UsersResponse model will include both the meta information and the users list
+class UsersResponse(BaseModel):
+    meta: Meta
+    users: List[UserPublic]
