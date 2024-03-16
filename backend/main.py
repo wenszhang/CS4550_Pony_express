@@ -102,11 +102,7 @@ async def get_chats(session: Session = Depends(get_session)):
 # GET /chats/{chat_id}
 @app.get("/chats/{chat_id}", tags=["Chats"], summary="Get a chat by ID",
          description="Fetches details of a specific chat by ID")
-async def get_chat(
-        chat_id: int,
-        include: Optional[List[str]] = Query(None),
-        session: Session = Depends(get_session)
-):
+async def get_chat(chat_id: int, include: Optional[List[str]] = Query(None), session: Session = Depends(get_session)):
     # Check if chat exists
     chat = session.get(ChatInDB, chat_id)
     if not chat:
@@ -119,29 +115,30 @@ async def get_chat(
             }
         )
 
-    # Fetch chat metadata
-    message_count = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).count()  # type: ignore
-    user_count = session.exec(  # type: ignore
-        select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)).count()
+    messages = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).all()
+    message_count = len(messages)
+
+    users = session.exec(
+        select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)
+    ).all()
+    user_count = len(users)
+
+    chat_response = ChatPublic.from_orm(chat)
 
     response = {
         "meta": {
             "message_count": message_count,
             "user_count": user_count
         },
-        "chat": ChatPublic.from_orm(chat)
+        "chat": chat_response.dict()
     }
 
-    # Include messages if requested
-    if 'messages' in (include or []):
-        messages = session.exec(
-            select(MessageInDB).where(MessageInDB.chat_id == chat_id).options(joinedload(MessageInDB.user))).all()
-        response["messages"] = [MessagePublic.from_orm(msg) for msg in messages]
-
-    # Include users if requested
-    if 'users' in (include or []):
-        users = session.exec(select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)).all()
-        response["users"] = [UserPublic.from_orm(user) for user in users]
+    # Dynamically add messages and users to the response based on 'include' query parameter
+    if include:
+        if "messages" in include:
+            response["messages"] = [MessagePublic.from_orm(msg).dict() for msg in messages]
+        if "users" in include:
+            response["users"] = [UserPublic.from_orm(user).dict() for user in users]
 
     return response
 
