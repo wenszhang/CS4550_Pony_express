@@ -39,12 +39,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: Session
     )
     try:
         payload = jwt.decode(token, jwt_key, algorithms=[jwt_alg])
-        print(f"Decoded JWT payload: {payload}")
         user_id: int = int(payload.get("sub"))
         if user_id is None:
             raise credentials_exception
         user = session.exec(select(UserInDB).where(UserInDB.id == user_id)).first()
-        print(f"Retrieved user: {user}")
         if user is None:
             raise credentials_exception
         return user
