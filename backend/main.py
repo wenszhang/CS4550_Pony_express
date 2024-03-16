@@ -1,22 +1,25 @@
 import json
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Dict
 from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.database import create_db_and_tables
 
-def load_data():
-    backend_dir = os.path.dirname(os.path.abspath(__file__))
-    fake_db_path = os.path.join(backend_dir, 'fake_db.json')
-    with open(fake_db_path, 'r') as file:
-        return json.load(file)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+    yield
 
 
 app = FastAPI(
     title="Assignment #1 - FastAPI backend",
     description="API for users and chat functions.",
-    version="0.0.1"
+    version="0.0.1",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -26,9 +29,6 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods
     allow_headers=["*"],  # Allow all headers
 )
-
-# Load data on app startup
-data = load_data()
 
 
 # Helper function to get current datetime in ISO format
