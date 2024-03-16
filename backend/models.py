@@ -12,7 +12,8 @@ class UserCreate(BaseModel):
 # Pydantic model for token responses
 class Token(BaseModel):
     access_token: str = Field(..., description="The JWT token for access")
-    token_type: str = Field(default="bearer", description="The type of the token, typically 'bearer'")
+    token_type: str = Field(default="Bearer", description="The type of the token, typically 'bearer'")
+    expires_in: int = Field(..., description="The lifetime of the token in seconds")
 
 
 # Pydantic model for user display in responses, without the password

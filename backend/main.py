@@ -6,9 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import joinedload
 from sqlmodel import select, Session
 
-from backend.auth import get_current_user, UserUpdate
+from backend.auth import get_current_user, UserUpdate, auth_router, get_password_hash
 from backend.database import create_db_and_tables, get_session
-from backend.models import UserPublic, ChatPublic, MessagePublic, MessageCreate
+from backend.models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UserCreate
 from backend.schema import UserInDB, ChatInDB, MessageInDB
 
 
@@ -32,6 +32,8 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods
     allow_headers=["*"],  # Allow all headers
 )
+
+app.include_router(auth_router, prefix="/auth")
 
 
 # User routes ========================================

@@ -10,7 +10,7 @@ from typing import Optional
 
 from .database import get_session
 from .schema import UserInDB
-from .models import UserCreate, Token
+from .models import UserCreate, Token, UserPublic
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 access_token_duration = 30  # Minutes
@@ -18,8 +18,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 jwt_key = os.environ.get("JWT_KEY", default="secret")
 jwt_alg = "HS256"
 
-# Todo: Finish implementing
-auth_router = APIRouter()
+auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 # Models ========================================
@@ -56,50 +55,102 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def authenticate_user(session: Session, username: str, password: str):
+def authenticate_user(session: Session, username: str, password: str) -> Optional[UserInDB]:
     user = session.exec(select(UserInDB).where(UserInDB.username == username)).first()
     if not user or not verify_password(password, user.hashed_password):
-        return False
+        return None
     return user
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+# Assuming you have the following function or similar already defined
+def create_access_token(*, data: dict, expires_delta: timedelta):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, jwt_key, algorithm=jwt_alg)
     return encoded_jwt
 
 
-@auth_router.post("/auth/registration")
-def register_user(user: UserCreate, session: Session = Depends(get_session)):
-    db_user = session.exec(
-        select(UserInDB).where((UserInDB.username == user.username) | (UserInDB.email == user.email))).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username or email already registered")
+# Auth routes ========================================
+
+# POST /auth/registration
+@auth_router.post("/registration", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+def register_user(
+        user: UserCreate,
+        session: Session = Depends(get_session)
+):
+    # Check if username or email already exists
+    existing_user_username = session.exec(
+        select(UserInDB).where(UserInDB.username == user.username)
+    ).first()
+    existing_user_email = session.exec(
+        select(UserInDB).where(UserInDB.email == user.email)
+    ).first()
+
+    # If username or email is taken, respond with a 422 error
+    if existing_user_username:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "type": "duplicate_value",
+                "entity_name": "User",
+                "entity_field": "username",
+                "entity_value": user.username
+            }
+        )
+    if existing_user_email:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "type": "duplicate_value",
+                "entity_name": "User",
+                "entity_field": "email",
+                "entity_value": user.email
+            }
+        )
+
+    # Hash the user's password
     hashed_password = get_password_hash(user.password)
-    db_user = UserInDB(username=user.username, email=user.email, hashed_password=hashed_password)
-    session.add(db_user)
+
+    # Create new user instance
+    new_user = UserInDB(
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password
+    )
+
+    # Add to the database
+    session.add(new_user)
     session.commit()
-    session.refresh(db_user)
-    return {"username": db_user.username, "email": db_user.email}
+    session.refresh(new_user)
+
+    # Return the public view of the user
+    return UserPublic.from_orm(new_user)
 
 
-@auth_router.post("/auth/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
-                                 session: Session = Depends(get_session)):
+# POST /auth/token
+@auth_router.post("/token", response_model=Token)
+async def login_for_access_token(
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        session: Session = Depends(get_session)
+):
     user = authenticate_user(session, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail={
+                "error": "invalid_client",
+                "error_description": "invalid username or password"
+            },
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=access_token_duration)
+
+    access_token_expires = timedelta(seconds=access_token_duration)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": access_token_duration
+    }
