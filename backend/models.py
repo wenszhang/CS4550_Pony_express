@@ -68,12 +68,14 @@ class MessageCreate(BaseModel):
     text: str
 
 
-# Assuming Meta is another Pydantic model you've defined to encapsulate meta information
 class Meta(BaseModel):
     count: int
 
 
-# The UsersResponse model will include both the meta information and the users list
 class UsersResponse(BaseModel):
     meta: Meta
     users: List[UserPublic]
+
+
+class UserResponse(BaseModel):
+    user: UserPublic

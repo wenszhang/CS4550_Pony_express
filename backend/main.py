@@ -9,7 +9,7 @@ from sqlmodel import select, Session
 
 from .auth import get_current_user, UserUpdate, auth_router
 from .database import create_db_and_tables, get_session
-from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase
+from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase, UserResponse
 from .schema import UserInDB, ChatInDB, MessageInDB
 
 
@@ -54,14 +54,11 @@ async def get_users(session: Session = Depends(get_session)):
 # GET /users/{user_id}
 @app.get("/users/{user_id}", tags=["Users"], summary="Get a user by ID",
          description="Fetches details of a user by ID",
-         response_model=UserPublic)
+         response_model=UserResponse)
 async def get_user(user_id: int, session: Session = Depends(get_session)):
     user = session.exec(select(UserInDB).where(UserInDB.id == user_id)).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=404, detail="User not found")
     return {"user": user}
 
 
