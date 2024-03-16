@@ -1,12 +1,12 @@
-import json
-import os
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Dict
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Response, status, APIRouter, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import select, Session
 
-from backend.database import create_db_and_tables
+from backend.database import create_db_and_tables, get_session
+from backend.schema import UserInDB
 
 
 @asynccontextmanager
@@ -23,12 +23,14 @@ app = FastAPI(
 )
 
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # type: ignore
     allow_origins=["http://localhost:5173"],  # URL of the frontend server
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods
     allow_headers=["*"],  # Allow all headers
 )
+
+app = APIRouter()
 
 
 # Helper function to get current datetime in ISO format
@@ -39,8 +41,8 @@ def current_iso_datetime():
 # GET /users
 @app.get("/users", tags=["Users"], summary="Get all users",
          description="Retrieves a list of all users in the system")
-async def get_users():
-    users = sorted(data.get('users', {}).values(), key=lambda x: x['id'])
+async def get_users(session: Session = Depends(get_session)):
+    users = session.exec(select(UserInDB)).all()
     return {
         "meta": {
             "count": len(users)
