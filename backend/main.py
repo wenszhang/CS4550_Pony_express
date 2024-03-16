@@ -252,7 +252,7 @@ async def update_current_user(
     session.commit()
     session.refresh(current_user)
 
-    return {"user": current_user}
+    return UserPublic.from_orm(current_user)
 
 
 # POST /chats/{chat_id}/messages
