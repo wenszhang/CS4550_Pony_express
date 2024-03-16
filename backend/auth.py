@@ -31,7 +31,10 @@ class UserUpdate(BaseModel):
 async def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)) -> UserInDB:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail={
+            "error": "invalid_client",
+            "error_description": "invalid access token"
+        },
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
