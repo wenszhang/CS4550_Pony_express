@@ -36,6 +36,10 @@ class UserBase(BaseModel):
     email: str
     created_at: datetime
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 class ChatPublic(BaseModel):
     id: int
@@ -45,6 +49,7 @@ class ChatPublic(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class MessagePublic(BaseModel):
@@ -56,6 +61,7 @@ class MessagePublic(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class MessageCreate(BaseModel):

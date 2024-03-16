@@ -9,7 +9,7 @@ from sqlmodel import select, Session
 
 from .auth import get_current_user, UserUpdate, auth_router
 from .database import create_db_and_tables, get_session
-from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta
+from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase
 from .schema import UserInDB, ChatInDB, MessageInDB
 
 
@@ -73,22 +73,21 @@ async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
     user = session.get(UserInDB, user_id)
     if not user:
         raise HTTPException(
-            status_code=404,
-            detail={
-                "type": "entity_not_found",
-                "entity_name": "User",
-                "entity_id": user_id
-            }
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
         )
 
-    result = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()  # type: ignore
+    chat_records = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()
 
-    chats = [ChatPublic.from_orm(chat) for chat in result]
+    # Convert each ChatInDB instance to ChatPublic instance
+    chats = []
+    for chat_record in chat_records:
+        owner_user_base = UserBase.from_orm(chat_record.owner)  # Convert UserInDB to UserBase
+        chat_public = ChatPublic.from_orm(chat_record)
+        chat_public.owner = owner_user_base  # Set the owner to the converted UserBase
+        chats.append(chat_public)
 
-    return {
-        "meta": {"count": len(chats)},
-        "chats": chats
-    }
+    return chats
 
 
 # Helper function to validate datetime format
@@ -105,14 +104,16 @@ def is_valid_datetime(dt_str):
          description="Retrieves a list of all chats",
          response_model=List[ChatPublic])
 async def get_chats(session: Session = Depends(get_session)):
-    result = session.exec(select(ChatInDB).options(joinedload(ChatInDB.owner))).all()
+    chat_records = session.exec(select(ChatInDB).options(joinedload(ChatInDB.owner))).all()
 
-    chats = [ChatPublic.from_orm(chat) for chat in result]
+    chats = []
+    for chat_record in chat_records:
+        owner_user_base = UserBase.from_orm(chat_record.owner)
+        chat_public = ChatPublic.from_orm(chat_record)
+        chat_public.owner = owner_user_base
+        chats.append(chat_public)
 
-    return {
-        "meta": {"count": len(chats)},
-        "chats": chats
-    }
+    return chats
 
 
 # GET /chats/{chat_id}
