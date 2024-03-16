@@ -50,7 +50,17 @@ async def get_users(session: Session = Depends(get_session)):
     return UsersResponse(meta=Meta(count=len(result)), users=result)
 
 
-# POST /auth/registration
+# POST /auth/registration in auth.py
+
+# GET /users/me (moved to be before /users/{user_id} to avoid conflict)
+@app.get("/users/me", tags=["Users"], summary="Get the current user",
+         description="Returns the current user",
+         response_model=UserPublic)
+async def get_current_user_route(current_user: UserInDB = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return current_user
+
 
 # GET /users/{user_id}
 @app.get("/users/{user_id}", tags=["Users"], summary="Get a user by ID",
@@ -217,15 +227,7 @@ async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
 
 # New routes from A3 ========================================
 
-# GET /users/me
-@app.get("/users/me", tags=["Users"], summary="Get the current user",
-         description="Returns the current user",
-         response_model=UserPublic)
-async def get_current_user_route(current_user: UserInDB = Depends(get_current_user)):
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return current_user
-
+# GET /users/me (moved to be before /users/{user_id} to avoid conflict)
 
 # PUT /users/me
 @app.put("/users/me", tags=["Users"], summary="Update the current user",
