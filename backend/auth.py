@@ -13,7 +13,7 @@ from .schema import UserInDB
 from .models import UserCreate, Token, UserPublic, UserResponse
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-access_token_duration = 30  # Minutes
+access_token_duration = 3600  # seconds
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 jwt_key = os.environ.get("JWT_KEY", default="secret")
 jwt_alg = "HS256"
@@ -36,7 +36,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: Session
     )
     try:
         payload = jwt.decode(token, jwt_key, algorithms=[jwt_alg])
-        user_id: int = payload.get("sub")
+        user_id: int = int(payload.get("sub"))
         if user_id is None:
             raise credentials_exception
         user = session.exec(select(UserInDB).where(UserInDB.id == user_id)).first()
@@ -62,7 +62,6 @@ def authenticate_user(session: Session, username: str, password: str) -> Optiona
     return user
 
 
-# Assuming you have the following function or similar already defined
 def create_access_token(*, data: dict, expires_delta: timedelta):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta

@@ -217,6 +217,7 @@ async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
 
 # New routes from A3 ========================================
 
+# GET /users/me
 @app.get("/users/me", tags=["Users"], summary="Get the current user",
          description="Returns the current user",
          response_model=UserPublic)
@@ -226,6 +227,7 @@ async def get_current_user_route(current_user: UserInDB = Depends(get_current_us
     return current_user
 
 
+# PUT /users/me
 @app.put("/users/me", tags=["Users"], summary="Update the current user",
          description="Updates the username or email of the current user",
          response_model=UserPublic)
@@ -253,6 +255,7 @@ async def update_current_user(
     return {"user": current_user}
 
 
+# POST /chats/{chat_id}/messages
 @app.post("/chats/{chat_id}/messages", tags=["Chats"], summary="Create a new message in a chat",
           description="Creates a new message in the chat, authored by the current user",
           response_model=MessagePublic, status_code=status.HTTP_201_CREATED)
