@@ -1,19 +1,20 @@
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Dict, List, Optional
-from fastapi import FastAPI, HTTPException, Response, status, APIRouter, Depends, Body, Query
+
+from fastapi import FastAPI, HTTPException, status, Depends, Body, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import joinedload
 from sqlmodel import select, Session
 
-from backend.auth import get_current_user, UserUpdate, auth_router, get_password_hash
-from backend.database import create_db_and_tables, get_session
-from backend.models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UserCreate
-from backend.schema import UserInDB, ChatInDB, MessageInDB
+from .auth import get_current_user, UserUpdate, auth_router
+from .database import create_db_and_tables, get_session
+from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate
+from .schema import UserInDB, ChatInDB, MessageInDB
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan():
     create_db_and_tables()
     yield
 
@@ -89,7 +90,7 @@ async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
             }
         )
 
-    result = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()
+    result = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()  # type: ignore
 
     chats = [ChatPublic.from_orm(chat) for chat in result]
 
@@ -144,7 +145,7 @@ async def get_chat(
         )
 
     # Fetch chat metadata
-    message_count = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).count()
+    message_count = session.exec(select(MessageInDB).where(MessageInDB.chat_id == chat_id)).count()  # type: ignore
     user_count = session.exec(select(UserInDB).join(ChatInDB.users).where(ChatInDB.id == chat_id)).count()
 
     response = {
@@ -230,7 +231,7 @@ async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
             "entity_id": chat_id
         })
 
-    result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()
+    result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()  # type: ignore
 
     users = [UserPublic.from_orm(user) for user in result]
 
