@@ -43,11 +43,11 @@ app.include_router(auth_router)
 # GET /users/me (moved to be before /users/{user_id} to avoid conflict)
 @app.get("/users/me", tags=["Users"], summary="Get the current user",
          description="Returns the current user",
-         response_model=UserPublic)
+         response_model=UserResponse)
 async def get_current_user_route(current_user: UserInDB = Depends(get_current_user)):
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"user": current_user}
+    return UserResponse(user=UserPublic.from_orm(current_user))
 
 
 # GET /users
