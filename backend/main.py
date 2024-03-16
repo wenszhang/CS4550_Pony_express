@@ -10,7 +10,7 @@ from sqlmodel import select, Session
 from .auth import get_current_user, UserUpdate, auth_router
 from .database import create_db_and_tables, get_session
 from .models import UserPublic, ChatPublic, MessagePublic, MessageCreate, UsersResponse, Meta, UserBase, UserResponse, \
-    ChatsResponse, ChatsMeta
+    ChatsResponse, ChatsMeta, MessagesResponse
 from .schema import UserInDB, ChatInDB, MessageInDB
 
 
@@ -64,22 +64,21 @@ async def get_user(user_id: int, session: Session = Depends(get_session)):
 
 
 # GET /users/{user_id}/chats
-@app.get("/chats/{chat_id}/users", tags=["Chats"], summary="Get users in a specific chat",
-         description="Fetches a list of users participating in a chat",
-         response_model=UsersResponse)
-async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
-    chat = session.get(ChatInDB, chat_id)
-    if not chat:
-        raise HTTPException(status_code=404, detail={
-            "type": "entity_not_found",
-            "entity_name": "Chat",
-            "entity_id": chat_id
-        })
+@app.get("/users/{user_id}/chats", tags=["Users"], summary="Get chats for a specific user",
+         description="Fetches a list of chats that a user is part of",
+         response_model=ChatsResponse)
+async def get_user_chats(user_id: int, session: Session = Depends(get_session)):
+    user = session.get(UserInDB, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()  # type: ignore
-    users = [UserPublic.from_orm(user) for user in result]
-    return UsersResponse(meta=Meta(count=len(users)), users=users)
+    chats = session.exec(select(ChatInDB).where(ChatInDB.users.any(id=user_id))).all()  # type: ignore
+    result = [ChatPublic.from_orm(chat) for chat in chats]
 
+    return ChatsResponse(meta=ChatsMeta(count=len(result)), chats=result)
+
+
+# Chat routes ========================================
 
 # GET /chats
 @app.get("/chats", tags=["Chats"], summary="Get all chats",
@@ -167,7 +166,7 @@ async def update_chat(chat_id: int, update_data: Dict[str, str], session: Sessio
 # GET /chats/{chat_id}/messages
 @app.get("/chats/{chat_id}/messages", tags=["Chats"], summary="Get messages for a specific chat",
          description="Retrieves all messages from a chat, identified by ID",
-         response_model=List[MessagePublic])
+         response_model=MessagesResponse)
 async def get_chat_messages(chat_id: int, session: Session = Depends(get_session)):
     chat = session.get(ChatInDB, chat_id)
     if not chat:
@@ -181,18 +180,13 @@ async def get_chat_messages(chat_id: int, session: Session = Depends(get_session
         select(MessageInDB).where(MessageInDB.chat_id == chat_id).options(joinedload(MessageInDB.user))).all()
     result = [MessagePublic.from_orm(msg) for msg in messages]
 
-    return {
-        "meta": {
-            "count": len(result),
-        },
-        "messages": result
-    }
+    return MessagesResponse(meta=Meta(count=len(result)), messages=result)
 
 
 # GET /chats/{chat_id}/users
 @app.get("/chats/{chat_id}/users", tags=["Chats"], summary="Get users in a specific chat",
          description="Fetches a list of users participating in a chat",
-         response_model=List[UserPublic])
+         response_model=UsersResponse)
 async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
     chat = session.get(ChatInDB, chat_id)
     if not chat:
@@ -203,15 +197,8 @@ async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
         })
 
     result = session.exec(select(UserInDB).where(ChatInDB.users.any(id=chat_id))).all()  # type: ignore
-
     users = [UserPublic.from_orm(user) for user in result]
-
-    return {
-        "meta": {
-            "count": len(users),
-        },
-        "users": users
-    }
+    return UsersResponse(meta=Meta(count=len(users)), users=users)
 
 
 # POST /chats

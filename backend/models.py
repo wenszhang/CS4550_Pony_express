@@ -88,3 +88,8 @@ class ChatsMeta(BaseModel):
 class ChatsResponse(BaseModel):
     meta: ChatsMeta
     chats: List[ChatPublic]
+
+
+class MessagesResponse(BaseModel):
+    meta: Meta
+    messages: List[MessagePublic]
