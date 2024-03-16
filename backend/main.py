@@ -232,7 +232,7 @@ async def get_chat_users(chat_id: int, session: Session = Depends(get_session)):
 # PUT /users/me
 @app.put("/users/me", tags=["Users"], summary="Update the current user",
          description="Updates the username or email of the current user",
-         response_model=UserPublic)
+         response_model=UserResponse)
 async def update_current_user(
         update_data: UserUpdate = Body(...),
         current_user: UserInDB = Depends(get_current_user),
@@ -254,8 +254,7 @@ async def update_current_user(
     session.commit()
     session.refresh(current_user)
 
-    return UserPublic.from_orm(current_user)
-
+    return UserResponse(user=UserPublic.from_orm(current_user))
 
 # POST /chats/{chat_id}/messages
 @app.post("/chats/{chat_id}/messages", tags=["Chats"], summary="Create a new message in a chat",
