@@ -59,14 +59,10 @@ async def get_user(user_id: int, session: Session = Depends(get_session)):
     user = session.exec(select(UserInDB).where(UserInDB.id == user_id)).first()
     if not user:
         raise HTTPException(
-            status_code=404,
-            detail={
-                "type": "entity_not_found",
-                "entity_name": "User",
-                "entity_id": user_id
-            }
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
         )
-    return {"user": user}
+    return UserPublic.from_orm(user)
 
 
 # GET /users/{user_id}/chats
