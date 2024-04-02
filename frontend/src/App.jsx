@@ -15,10 +15,10 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <BrowserRouter>
                 <div className="app-container">
-                    <div className="left-column">
+                    <div className="chat-list-column">
                         <ChatList setSelectedChatId={setSelectedChatId}/>
                     </div>
-                    <div className="right-column">
+                    <div className="chat-messages-column">
                         <Routes>
                             <Route path="/" element={<SelectChat/>}/>
                             <Route path="/chats" element={<SelectChat/>}/>
