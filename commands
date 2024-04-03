@@ -13,3 +13,9 @@ poetry run uvicorn backend.main:app --reload
 running your servers:
 for the frontend server, run "npm run dev" from within the `frontend` directory
 for the backend server, run "uvicorn backend.main:app --reload" from the base directory
+
+poetry install
+requirements.txt
+
+npm run dev
+poetry run uvicorn backend.main:app --reload

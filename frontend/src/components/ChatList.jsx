@@ -25,11 +25,13 @@ function ChatList() {
         <div className="chat-list">
             {Array.isArray(chats) && chats.length > 0 ? (
                 chats.map((chat) => (
-                    <Link to={`/chats/${chat.id}`} key={chat.id} className="chat-list-box">
-                        <div className="chat-name">{chat.name}</div>
-                        <div className="chat-users">{chat.user_ids.join(', ')}</div>
-                        <div className="chat-created">Created at: {new Date(chat.created_at).toDateString()}</div>
-                    </Link>
+                    chats.map((chat) => (
+                        <Link to={`/chats/${chat.id}`} key={chat.id} className="chat-list-box">
+                            <div className="chat-name">{chat.name}</div>
+                            <div className="chat-users">{Array.isArray(chat.user_ids) ? chat.user_ids.join(', ') : 'No users'}</div>
+                            <div className="chat-created">Created at: {new Date(chat.created_at).toDateString()}</div>
+                        </Link>
+                    ))
                 ))
             ) : (
                 <div>No chats available or still loading...</div>
