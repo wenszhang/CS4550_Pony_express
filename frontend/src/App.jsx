@@ -9,6 +9,8 @@ import Login from './components/Login';
 import {AuthProvider} from './contexts/auth.jsx';
 import {UserProvider} from './contexts/user.jsx';
 import Registration from "./components/Registration.jsx";
+import {PrivateRoute} from './utils/PrivateRoute.jsx';
+import {PublicRoute} from './utils/PublicRoute.jsx';
 
 const queryClient = new QueryClient();
 
@@ -27,13 +29,17 @@ function App() {
                             <div className="chat-messages-column">
                                 <Routes>
                                     <Route path="/" element={<SelectChat/>}/>
-                                    <Route path="/chats" element={<SelectChat/>}/>
-                                    <Route path="/chats/:chatId" element={<Chats chatId={selectedChatId}/>}/>
-                                    <Route path="/login" element={<Login/>}/>
-                                    <Route path="/register" element={<Registration/>}/>
+                                    <PrivateRoute path="/chats">
+                                        <Route path="/" element={<SelectChat/>}/>
+                                        <Route path="/:chatId" element={<Chats chatId={selectedChatId}/>}/>
+                                    </PrivateRoute>
+                                    <PrivateRoute path="/profile" element={<Profile/>}/>
+                                    <PublicRoute path="/login" element={<Login/>}/>
+                                    <PublicRoute path="/register" element={<Registration/>}/>
+                                    <Route path="*"
+                                           element={isLoggedIn ? <Redirect to="/chats"/> : <Redirect to="/login"/>}/>
                                 </Routes>
                             </div>
-                            <Link to="/login" className="login-button">Go to Login</Link>
                         </div>
                     </UserProvider>
                 </AuthProvider>
