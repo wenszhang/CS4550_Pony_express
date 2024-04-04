@@ -8,6 +8,7 @@ import SelectChat from './components/SelectChat';
 import Login from './components/Login';
 import {AuthProvider} from './contexts/auth.jsx';
 import {UserProvider} from './contexts/user.jsx';
+import Registration from "./components/Registration.jsx";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ function App() {
                                     <Route path="/chats" element={<SelectChat/>}/>
                                     <Route path="/chats/:chatId" element={<Chats chatId={selectedChatId}/>}/>
                                     <Route path="/login" element={<Login/>}/>
+                                    <Route path="/register" element={<Registration/>}/>
                                 </Routes>
                             </div>
                             <Link to="/login" className="login-button">Go to Login</Link>

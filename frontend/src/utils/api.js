@@ -11,10 +11,14 @@ const api = (token) => {
 
     const handleResponse = (response) => {
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json().then((body) => {
+                const error = new Error(`HTTP error! status: ${response.status}`);
+                error.body = body;
+                throw error;
+            });
         }
         return response.json();
-    }
+    };
 
     const get = (url) => (
         fetch(baseUrl + url, { method: "GET", headers, }).then(handleResponse)
