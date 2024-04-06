@@ -19,7 +19,6 @@ function AuthenticatedRoutes() {
         <Routes>
             <Route path="/" element={<Navigate to="/chats"/>}/>
             <Route path="/chats" element={<Chats/>}>
-                <Route index element={<div>Select a chat from the left</div>}/>
                 <Route path=":chatId" element={<Chat/>}/>
             </Route>
             <Route path="/profile" element={<Profile/>}/>
