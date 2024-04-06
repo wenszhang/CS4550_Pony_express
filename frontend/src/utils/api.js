@@ -21,23 +21,15 @@ const api = (token) => {
     };
 
     const get = (url) => (
-        fetch(baseUrl + url, { method: "GET", headers, }).then(handleResponse)
+        fetch(baseUrl + url, {method: "GET", headers,}).then(handleResponse)
     );
 
     const post = (url, body) => (
-        fetch(
-            baseUrl + url,
-            {
-                method: "POST",
-                body: JSON.stringify(body),
-                headers,
-            },
-        ).then(handleResponse)
+        fetch(baseUrl + url, {method: "POST", body: JSON.stringify(body), headers,},).then(handleResponse)
     );
 
     const postForm = (url, body) => (
-        fetch(
-            baseUrl + url,
+        fetch(baseUrl + url,
             {
                 method: "POST",
                 body: new URLSearchParams(body),
@@ -49,7 +41,18 @@ const api = (token) => {
         ).then(handleResponse)
     );
 
-    return { get, post, postForm };
+    const put = (url, body) => (
+        fetch(
+            baseUrl + url,
+            {
+                method: "PUT",
+                body: JSON.stringify(body),
+                headers,
+            },
+        ).then(handleResponse)
+    );
+
+    return { get, post, postForm, put };
 };
 
 export default api;

@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import { useAuth, useUser } from "../hooks";
+import { useAuth, useUser, useApi } from "../hooks";
 import Button from "./Button";
 import FormInput from "./FormInput";
 
 function Profile() {
     const { logout } = useAuth();
     const { user, isLoading } = useUser();
+    const api = useApi();
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [createdDate, setCreatedDate] = useState("");
     const [isEditing, setIsEditing] = useState(false);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         if (user) {
@@ -29,11 +31,19 @@ function Profile() {
         setEmail(user.email);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Updated Username:", username);
-        console.log("Updated Email:", email);
-        setIsEditing(false);
+        try {
+            const response = await api.put("/users/me", { username, email });
+            if (!response.ok) {
+                setError('Failed to update profile');
+            }
+            alert("Profile updated successfully!");
+            setIsEditing(false);
+        } catch (err) {
+            setError(err.message || "An error occurred while updating the profile.");
+            console.error("Profile update error:", err);
+        }
     };
 
     if (isLoading) {
@@ -43,6 +53,7 @@ function Profile() {
     return (
         <div className="max-w-md mx-auto p-4">
             <h2 className="text-2xl font-bold py-2">Profile Details</h2>
+            {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
             <form className="border rounded px-4 py-4" onSubmit={handleSubmit}>
                 <FormInput
                     label="Username"
