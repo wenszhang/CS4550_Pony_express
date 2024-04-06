@@ -5,25 +5,22 @@ import Button from "./Button";
 import FormInput from "./FormInput";
 
 function Error({ message }) {
-    if (message === "") {
-        return <></>;
-    }
-    return (
-        <div className="text-red-300 text-xs">
+    return message ? (
+        <div className="text-red-500 text-xs mt-2">
             {message}
         </div>
-    );
+    ) : null;
 }
 
 function LoginLink() {
     return (
-        <div className="pt-8 flex flex-col">
-            <div className="text-xs">
-                already have an account?
-            </div>
+        <div className="pt-8 flex flex-col items-center">
+      <span className="text-xs">
+        Already have an account?
+      </span>
             <Link to="/login">
                 <Button className="mt-1 w-full">
-                    login
+                    Login
                 </Button>
             </Link>
         </div>
@@ -35,39 +32,40 @@ function Registration() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [isLoading, setLoading] = useState(false);
 
     const api = useApi();
     const navigate = useNavigate();
 
-    const disabled = username === "" || email === "" || password === "";
+    const disabled = isLoading || !username || !email || !password;
 
-    const onSubmit = (e) => {
+    const onSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
 
-        api.post(
-            "/auth/registration",
-            { username, email, password },
-        ).then((response) => {
-            navigate("/login");
-        }).catch((error) => {
-            if (error.body && error.body.detail.type === "duplicate_value") {
-                const errorMessage = error.body.detail.entity_field + " already taken";
-                setError(errorMessage);
+        try {
+            const response = await api.post("/auth/registration", { username, email, password });
+            if (response.ok) {
+                navigate("/login");
             } else {
-                const errorMessage = "error registering";
-                setError(errorMessage);
+                const data = await response.json();
+                setError(data.detail.error_description || "An error occurred during registration.");
             }
-        });
+        } catch (error) {
+            setError("Network error or server is unreachable.");
+        }
+
+        setLoading(false);
     }
 
     return (
-        <div className="max-w-96 mx-auto py-8 px-4">
-            <form onSubmit={onSubmit}>
-                <FormInput type="text" name="username" setter={setUsername} />
-                <FormInput type="email" name="email" setter={setEmail} />
-                <FormInput type="password" name="password" setter={setPassword} />
+        <div className="max-w-md mx-auto py-8 px-4">
+            <form onSubmit={onSubmit} className="space-y-4">
+                <FormInput label="Username" type="text" name="username" setter={setUsername} />
+                <FormInput label="Email" type="email" name="email" setter={setEmail} />
+                <FormInput label="Password" type="password" name="password" setter={setPassword} />
                 <Button className="w-full" type="submit" disabled={disabled}>
-                    register
+                    Register
                 </Button>
                 <Error message={error} />
             </form>

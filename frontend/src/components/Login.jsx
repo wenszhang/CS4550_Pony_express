@@ -1,29 +1,26 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {useApiWithoutToken, useAuth} from "../hooks.js";
+import { useApiWithoutToken, useAuth } from "../hooks";
 import Button from "./Button";
 import FormInput from "./FormInput";
 
 function Error({ message }) {
-    if (message === "") {
-        return <></>;
-    }
-    return (
+    return message ? (
         <div className="text-red-300 text-xs">
             {message}
         </div>
-    );
+    ) : null;
 }
 
 function RegistrationLink() {
     return (
         <div className="pt-8 flex flex-col">
             <div className="text-xs">
-                need an account?
+                Need an account?
             </div>
-            <Link to="/register">
+            <Link to="/registration">
                 <Button className="mt-1 w-full">
-                    register
+                    Register
                 </Button>
             </Link>
         </div>
@@ -34,29 +31,33 @@ function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [isLoading, setLoading] = useState(false);
 
     const navigate = useNavigate();
-
     const { login } = useAuth();
-
-    const disabled = username === "" || password === "";
-
     const api = useApiWithoutToken();
 
-    const onSubmit = (e) => {
-        e.preventDefault();
+    const disabled = isLoading || username === "" || password === "";
 
-        api.post("/auth/token", { username, password })
-            .then(({ access_token }) => {
-                login(access_token)
-                    .then(() => navigate("/chats"))
-                    .catch((error) => {
-                        setError('Failed to log in');
-                    });
-            })
-            .catch((error) => {
-                setError('Failed to authenticate');
-            });
+    const onSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            const response = await api.postForm("/auth/token", { username, password });
+            if (response.ok) {
+                const userData = await response.json();
+                await login(userData);
+                navigate("/animals");
+            } else {
+                const errorData = await response.json();
+                setError(errorData.detail.error_description || "Unknown error occurred.");
+            }
+        } catch (error) {
+            setError("Network error or server is unreachable.");
+        }
+
+        setLoading(false);
     }
 
     return (
@@ -65,7 +66,7 @@ function Login() {
                 <FormInput type="text" name="username" setter={setUsername} />
                 <FormInput type="password" name="password" setter={setPassword} />
                 <Button className="w-full" type="submit" disabled={disabled}>
-                    login
+                    Login
                 </Button>
                 <Error message={error} />
             </form>
