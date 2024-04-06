@@ -1,24 +1,17 @@
-import {Redirect, Route} from "react-router-dom";
-import {useContext} from "react";
-import {Auth} from "../contexts/auth.jsx";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks'; // import useAuth from hooks.js
 
-export function PublicRoute({children, ...rest}) {
-    const {isLoggedIn} = useContext(Auth);
-    return (
-        <Route
-            {...rest}
-            render={({location}) =>
-                !isLoggedIn ? (
-                    children
-                ) : (
-                    <Redirect
-                        to={{
-                            pathname: "/chats",
-                            state: {from: location}
-                        }}
-                    />
-                )
-            }
-        />
-    );
-}
+const PublicRoute = ({ children }) => {
+    const { isLoggedIn } = useAuth(); // use useAuth hook
+    const navigate = useNavigate();
+
+    if (isLoggedIn) {
+        navigate('/chats');
+        return null;
+    }
+
+    return children;
+};
+
+export default PublicRoute;

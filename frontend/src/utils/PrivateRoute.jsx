@@ -1,24 +1,16 @@
-import {Redirect, Route} from 'react-router-dom';
-import {useContext} from 'react';
-import {Auth} from '../contexts/auth.jsx';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks';
 
-export function PrivateRoute({children, ...rest}) {
-    const {isLoggedIn} = useContext(Auth);
-    return (
-        <Route
-            {...rest}
-            render={({location}) =>
-                isLoggedIn ? (
-                    children
-                ) : (
-                    <Redirect
-                        to={{
-                            pathname: "/login",
-                            state: {from: location}
-                        }}
-                    />
-                )
-            }
-        />
-    );
-}
+const PrivateRoute = ({ children }) => {
+    const { isLoggedIn } = useAuth();
+    const navigate = useNavigate();
+
+    if (!isLoggedIn) {
+        navigate('/login');
+        return null;
+    }
+
+    return children;
+};
+
+export default PrivateRoute;
