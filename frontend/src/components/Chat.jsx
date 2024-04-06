@@ -11,7 +11,7 @@ function Message({ message }) {
 
     return (
         <div className={className}>
-            <div className="font-bold">{message.user_id}</div>
+            <div className="font-bold">{message.user.username}</div>
             <div className="text-sm text-slate-500">{formatDate(message.created_at)}</div>
             <div>{message.text}</div>
         </div>
@@ -41,7 +41,7 @@ function ChatMessages({ messages }) {
     if (messages && messages.length > 0) {
         return (
             <div ref={messagesContainerRef} className="flex flex-col p-4 overflow-y-auto h-full">
-                {messages.map((message, index) => (
+                {messages.map((message) => (
                     <Message key={message.id} message={message} />
                 ))}
                 <div ref={messagesEndRef} />
