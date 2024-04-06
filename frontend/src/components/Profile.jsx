@@ -5,15 +5,15 @@ import FormInput from "./FormInput";
 
 function Profile() {
     const { logout } = useAuth();
-    const user = useUser();
+    const { user, isLoading } = useUser();
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         if (user) {
-            setUsername(user.username);
-            setEmail(user.email);
+            setUsername(user.username || '');
+            setEmail(user.email || '');
         }
     }, [user]);
 
@@ -33,6 +33,10 @@ function Profile() {
         console.log("Updated Email:", email);
         setIsEditing(false);
     };
+
+    if (isLoading) {
+        return <div>Loading...</div>; // replace this with your loading spinner or placeholder
+    }
 
     return (
         <div className="max-w-96 mx-auto px-4 py-8">
