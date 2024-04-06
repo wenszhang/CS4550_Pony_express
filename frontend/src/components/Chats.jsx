@@ -20,8 +20,8 @@ function Chats() {
     }, []);
 
     return (
-        <div className="flex flex-row max-h-screen">
-            <div ref={leftNavRef} className="bg-gray-800 border-r overflow-y-auto" style={{ width: '20%' }}>
+        <div className="flex flex-row h-full">
+            <div ref={leftNavRef} className="bg-gray-800 border-r" style={{ width: '20%' }}>
                 <LeftNav />
             </div>
             <div
@@ -29,7 +29,7 @@ function Chats() {
                 style={{ background: '#343a40', width: '0.5rem' }}
                 onMouseDown={onMouseDown}
             />
-            <div className="flex-1 p-8 overflow-y-auto max-h-screen">
+            <div className="flex-1">
                 <Outlet />
             </div>
         </div>

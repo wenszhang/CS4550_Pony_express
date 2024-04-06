@@ -26,13 +26,25 @@ function NoMessages() {
     );
 }
 
+import React, { useEffect, useRef } from 'react';
+
 function ChatMessages({ messages }) {
+    const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
+
+    useEffect(() => {
+        if (messagesEndRef.current && messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+    }, [messages]);
+
     if (messages && messages.length > 0) {
         return (
-            <div className="flex flex-col p-4">
-                {messages.map((message) => (
+            <div ref={messagesContainerRef} className="flex flex-col p-4 overflow-y-auto h-full">
+                {messages.map((message, index) => (
                     <Message key={message.id} message={message} />
                 ))}
+                <div ref={messagesEndRef} />
             </div>
         );
     }

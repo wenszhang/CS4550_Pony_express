@@ -48,7 +48,7 @@ function LeftNav() {
     const filteredChats = chats.filter(chat => search === "" || regex.test(chat.name));
 
     return (
-        <nav className="flex flex-col w-full border-r border-gray-700 bg-gray-800 text-white">
+        <nav className="flex flex-col w-full border-r border-gray-700 bg-gray-800 text-white h-full">
             <div className="p-2">
                 <input
                     className="w-full px-4 py-2 mb-2 bg-gray-700 border border-gray-600 placeholder-gray-400 text-white"
