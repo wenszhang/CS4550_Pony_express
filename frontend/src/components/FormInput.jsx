@@ -1,29 +1,22 @@
 function FormInput({ setter, ...props }) {
-    let onChange;
-    if (props.onChange) {
-        onChange = props.onChange;
-    } else if (setter) {
-        onChange = (e) => setter(e.target.value);
-    } else {
-        onChange = () => {};
-    }
+    const onChange = props.onChange || (setter ? (e) => setter(e.target.value) : undefined);
 
-    const className = [
+    const inputClassName = [
+        "border rounded px-4 py-2",
         props.className || "",
-        "border rounded",
-        "px-4 py-2",
-        props.readOnly ?
-            "bg-slate-500" :
-            "bg-transparent border-lgrn",
+        props.readOnly ? "bg-slate-500" : "bg-transparent border-green-500"
     ].join(" ");
 
     return (
         <div className="flex flex-col py-2">
-            <label htmlFor={props.name}>{props.name}</label>
+            <label htmlFor={props.name} className="capitalize">
+                {props.label || props.name}
+            </label>
             <input
                 {...props}
-                className={className}
+                className={inputClassName}
                 onChange={onChange}
+                id={props.name}
             />
         </div>
     );

@@ -17,7 +17,7 @@ const api = (token) => {
                 throw error;
             });
         }
-        return response.json();
+        return response;
     };
 
     const get = (url) => (

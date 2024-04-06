@@ -1,16 +1,22 @@
-function Button(props) {
-    const className = [
-        props.className || "",
+function Button({ className, disabled, children, type = "button", ...rest }) {
+    const buttonClassName = [
+        className || "",
         "border rounded",
         "px-4 py-2 my-4",
-        props.disabled ?
+        disabled ?
             "bg-slate-500 italic" :
-            "border-lgrn bg-transparent hover:bg-slate-800",
+            "border-green-500 bg-transparent hover:bg-slate-800",
     ].join(" ");
 
     return (
-        <button {...props} className={className}>
-            {props.children}
+        <button
+            type={type}
+            className={buttonClassName}
+            disabled={disabled}
+            aria-disabled={disabled ? "true" : "false"}
+            {...rest}
+        >
+            {children}
         </button>
     );
 }

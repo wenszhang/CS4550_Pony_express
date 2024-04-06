@@ -1,40 +1,67 @@
-import React from 'react';
-import {useQuery} from 'react-query';
-import {useParams} from 'react-router-dom';
-import axios from 'axios';
-import './Chat.css';
+import { useQuery } from "react-query";
+import { useParams } from "react-router-dom";
+import { useApi } from "../hooks";
 
-function Chat() {
-    const {chatId} = useParams(); // get chatId from the URL parameters
+function Message({ message }) {
+    const className = "flex flex-col p-2 border-b border-slate-300";
 
-    // Fetch messages specific chat
-    const {data, isLoading, error} = useQuery(['messages', chatId], () =>
-        axios.get(`http://localhost:8000/chats/${chatId}/messages`).then(res => res.data)
-    );
+    const formatDate = (date) => {
+        return `${new Date(date).toDateString()} - ${new Date(date).toLocaleTimeString()}`;
+    }
 
-    if (isLoading) return <div>Loading...</div>;
-    if (error) return <div>An error has occurred: {error.message}</div>;
-
-    // If messages is an array before rendering
     return (
-        <div className="messages-list">
-            {Array.isArray(data?.messages) ? (
-                data.messages.map((message) => (
-                    <div key={message.id} className="message-box">
-                        <div>
-                            <span className="message-username">{message.user_id}</span>
-                            <span className="message-timestamp">
-                            {new Date(message.created_at).toDateString()} - {new Date(message.created_at).toLocaleTimeString()}
-                        </span>
-                        </div>
-                        <div className="message-text">{message.text}</div>
-                    </div>
-                ))
-            ) : (
-                <p>No messages or still loading...</p>
-            )}
+        <div className={className}>
+            <div className="font-bold">{message.user_id}</div>
+            <div className="text-sm text-slate-500">{formatDate(message.created_at)}</div>
+            <div>{message.text}</div>
         </div>
     );
+}
+
+function NoMessages() {
+    return (
+        <div className="font-bold text-2xl py-4 text-center">
+            No messages or still loading...
+        </div>
+    );
+}
+
+function ChatMessages({ messages }) {
+    if (messages && messages.length > 0) {
+        return (
+            <div className="flex flex-col p-4">
+                {messages.map((message) => (
+                    <Message key={message.id} message={message} />
+                ))}
+            </div>
+        );
+    }
+
+    return <NoMessages />;
+}
+
+function Chat() {
+    const { chatId } = useParams();
+    const api = useApi();
+
+    const { data, isLoading, isError, error } = useQuery({
+        queryKey: ["chats", chatId, "messages"],
+        queryFn: () => (
+            api.get(`/chats/${chatId}/messages`)
+                .then((response) => response.json())
+        ),
+        enabled: !!chatId,
+    });
+
+    if (isLoading) {
+        return <div className="text-center text-xl">Loading...</div>;
+    }
+
+    if (isError) {
+        return <div className="text-center text-xl text-red-500">An error occurred: {error.message}</div>;
+    }
+
+    return <ChatMessages messages={data?.messages} />;
 }
 
 export default Chat;
