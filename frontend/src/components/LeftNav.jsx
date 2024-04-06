@@ -7,9 +7,9 @@ function ChatLink({ chat }) {
     const url = `/chats/${chat.id}`;
     const className = ({ isActive }) => [
         "p-2",
-        "hover:bg-slate-800 hover:text-white",
+        "hover:bg-slate-500 hover:text-white",
         "flex flex-row justify-between",
-        isActive ? "bg-slate-800 text-white font-bold" : ""
+        isActive ? "bg-slate-600 text-white font-bold" : ""
     ].join(" ");
 
     const chatName = ({ isActive }) => (
@@ -30,8 +30,7 @@ function LeftNav() {
     const { data, isLoading, isError, error } = useQuery({
         queryKey: ["chats"],
         queryFn: () => (
-            api.get("/chats")
-                .then((response) => response.json())
+            api.get("/chats").then((response) => response.json())
         ),
     });
 
@@ -49,19 +48,19 @@ function LeftNav() {
     const filteredChats = chats.filter(chat => search === "" || regex.test(chat.name));
 
     return (
-        <nav className="flex flex-col w-40 border-r border-gray-700 min-h-screen bg-gray-800 text-white">
-            <div className="flex flex-col overflow-y-auto">
-                {filteredChats.map(chat => (
-                    <ChatLink key={chat.id} chat={chat} />
-                ))}
-            </div>
-            <div className="p-2 border-t border-gray-700">
+        <nav className="flex flex-col w-full border-r border-gray-700 bg-gray-800 text-white">
+            <div className="p-2">
                 <input
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 placeholder-gray-400 text-white"
+                    className="w-full px-4 py-2 mb-2 bg-gray-700 border border-gray-600 placeholder-gray-400 text-white"
                     type="search"
                     placeholder="Search chats"
                     onChange={(e) => setSearch(e.target.value)}
                 />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+                {filteredChats.map(chat => (
+                    <ChatLink key={chat.id} chat={chat} />
+                ))}
             </div>
         </nav>
     );

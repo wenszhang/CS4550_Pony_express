@@ -55,9 +55,9 @@ function App() {
             <AuthProvider>
                 <BrowserRouter>
                     <UserProvider>
-                        <div className="h-screen max-h-screen mx-auto bg-gray-700 text-white flex flex-col">
+                        <div className="flex flex-col h-screen bg-gray-700 text-white">
                             <TopNav/>
-                            <main className="flex-grow">
+                            <main className="flex-1 overflow-hidden">
                                 <UseRoutes/>
                             </main>
                         </div>
