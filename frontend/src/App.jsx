@@ -8,7 +8,7 @@ import Login from "./components/Login";
 import Profile from "./components/Profile";
 import Registration from "./components/Registration";
 import TopNav from "./components/TopNav";
-import Chats from "./components/LeftNav.jsx";
+import Chats from "./components/Chats";
 import Chat from "./components/Chat";
 import NotFound from "./components/NotFound";
 
@@ -18,8 +18,10 @@ function AuthenticatedRoutes() {
     return (
         <Routes>
             <Route path="/" element={<Navigate to="/chats"/>}/>
-            <Route path="/chats" element={<Chats/>}/>
-            <Route path="/chats/:chatId" element={<Chat/>}/>
+            <Route path="/chats" element={<Chats/>}>
+                <Route index element={<div>Select a chat from the left</div>}/>
+                <Route path=":chatId" element={<Chat/>}/>
+            </Route>
             <Route path="/profile" element={<Profile/>}/>
             <Route path="*" element={<NotFound/>}/>
         </Routes>
@@ -53,7 +55,7 @@ function App() {
             <AuthProvider>
                 <BrowserRouter>
                     <UserProvider>
-                        <div className="h-screen max-h-screen max-w-2xl mx-auto bg-gray-700 text-white flex flex-col">
+                        <div className="h-screen max-h-screen mx-auto bg-gray-700 text-white flex flex-col">
                             <TopNav/>
                             <main className="flex-grow">
                                 <UseRoutes/>

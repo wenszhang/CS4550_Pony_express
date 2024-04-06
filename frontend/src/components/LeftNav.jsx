@@ -36,11 +36,11 @@ function LeftNav() {
     });
 
     if (isLoading) {
-        return <div className="p-2">Loading chats...</div>;
+        return <div className="p-2 text-white">Loading chats...</div>;
     }
 
     if (isError) {
-        return <div className="p-2">An error occurred: {error.message}</div>;
+        return <div className="p-2 text-red-500">An error occurred: {error.message}</div>;
     }
 
     const regex = new RegExp(search.split("").join(".*"), 'i');
@@ -49,15 +49,15 @@ function LeftNav() {
     const filteredChats = chats.filter(chat => search === "" || regex.test(chat.name));
 
     return (
-        <nav className="flex flex-col border-r-2 border-purple-400 h-main">
-            <div className="flex flex-col overflow-y-scroll border-b-2 border-purple-400">
+        <nav className="flex flex-col w-40 border-r border-gray-700 min-h-screen bg-gray-800 text-white">
+            <div className="flex flex-col overflow-y-auto">
                 {filteredChats.map(chat => (
                     <ChatLink key={chat.id} chat={chat} />
                 ))}
             </div>
-            <div className="p-2">
+            <div className="p-2 border-t border-gray-700">
                 <input
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 placeholder-gray-400 text-white"
                     type="search"
                     placeholder="Search chats"
                     onChange={(e) => setSearch(e.target.value)}
