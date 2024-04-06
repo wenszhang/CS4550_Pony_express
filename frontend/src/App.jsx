@@ -3,6 +3,7 @@ import {BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
 import {AuthProvider} from "./context/auth";
 import {UserProvider} from "./context/user";
 import {useAuth} from "./hooks";
+import Home from "./components/Home";
 import Login from "./components/Login";
 import Profile from "./components/Profile";
 import Registration from "./components/Registration";
@@ -12,11 +13,6 @@ import Chat from "./components/Chat";
 import NotFound from "./components/NotFound";
 
 const queryClient = new QueryClient();
-
-function Home() {
-    const {isLoggedIn} = useAuth();
-    return isLoggedIn ? <Navigate to="/chats"/> : <Navigate to="/login"/>;
-}
 
 function AuthenticatedRoutes() {
     return (
@@ -33,7 +29,6 @@ function AuthenticatedRoutes() {
 function UnauthenticatedRoutes() {
     return (
         <Routes>
-            <Route path="/" element={<Navigate to="/login"/>}/>
             <Route path="/login" element={<Login/>}/>
             <Route path="/register" element={<Registration/>}/>
             <Route path="*" element={<Navigate to="/login"/>}/>
@@ -42,7 +37,7 @@ function UnauthenticatedRoutes() {
 }
 
 function UseRoutes() {
-    const {isLoggedIn} = useAuth();
+    const { isLoggedIn } = useAuth();
     return (
         <Routes>
             <Route path="/" element={<Home/>}/>

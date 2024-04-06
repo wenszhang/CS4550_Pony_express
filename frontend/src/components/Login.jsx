@@ -18,7 +18,7 @@ function RegistrationLink() {
             <div className="text-xs">
                 Need an account?
             </div>
-            <Link to="/registration">
+            <Link to="/register">
                 <Button className="mt-1 w-full">
                     Register
                 </Button>
