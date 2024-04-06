@@ -48,3 +48,13 @@ locally. You can also inspect the documentation using one of the following:
 - swagger at `http://127.0.0.1:8000/docs`
 - redoc at `http://127.0.0.1:8000/redoc`
 
+To run front end:
+
+```bash
+cd frontend
+```
+
+Then run
+```bash
+npm run dev
+```

@@ -13,7 +13,7 @@ import NotFound from "./components/NotFound";
 
 const queryClient = new QueryClient();
 
-function Home() { //Todo: use home page so not unused
+function Home() {
     const {isLoggedIn} = useAuth();
     return isLoggedIn ? <Navigate to="/chats"/> : <Navigate to="/login"/>;
 }
@@ -45,8 +45,8 @@ function UseRoutes() {
     const {isLoggedIn} = useAuth();
     return (
         <Routes>
-            <Route path="/register"
-                   element={<Registration/>}/> {/* Allow access to registration regardless of auth state */}
+            <Route path="/" element={<Home/>}/>
+            <Route path="/register" element={<Registration/>}/>
             <Route path="*" element={isLoggedIn ? <AuthenticatedRoutes/> : <UnauthenticatedRoutes/>}/>
         </Routes>
     );

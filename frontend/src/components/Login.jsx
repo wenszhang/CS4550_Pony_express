@@ -48,12 +48,13 @@ function Login() {
             if (response.ok) {
                 const userData = await response.json();
                 await login(userData);
-                navigate("/animals");
+                navigate("/chats");
             } else {
                 const errorData = await response.json();
                 setError(errorData.detail.error_description || "Unknown error occurred.");
             }
         } catch (error) {
+            console.error(error);
             setError("Network error or server is unreachable.");
         }
 
