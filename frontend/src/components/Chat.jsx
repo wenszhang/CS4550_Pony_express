@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import {useMutation, useQuery, useQueryClient} from "react-query";
 import { useParams } from "react-router-dom";
 import { useApi } from "../hooks";
 
@@ -26,7 +26,7 @@ function NoMessages() {
     );
 }
 
-import React, { useEffect, useRef } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 function ChatMessages({ messages }) {
     const messagesEndRef = useRef(null);
@@ -52,6 +52,50 @@ function ChatMessages({ messages }) {
     return <NoMessages />;
 }
 
+function SendMessageForm({ chatId, api }) {
+    const [messageText, setMessageText] = useState('');
+    const queryClient = useQueryClient();
+
+    const mutation = useMutation(
+        (message) => api.post(`/chats/${chatId}/messages`, message),
+        {
+            onSuccess: async () => {
+                await queryClient.invalidateQueries(["chats", chatId, "messages"]);
+            },
+        }
+    );
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (!messageText.trim()) {
+            return;
+        }
+
+        try {
+            mutation.mutate({ text: messageText });
+            setMessageText('');
+        } catch (error) {
+            console.error('Failed to send message:', error);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="flex items-center p-4">
+            <input
+                type="text"
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                className="flex-grow mr-4 p-2 border border-slate-300 text-black"
+                placeholder="Send a message..."
+            />
+            <button type="submit" className="p-2 bg-blue-500 text-white">
+                send
+            </button>
+        </form>
+    );
+}
+
 function Chat() {
     const { chatId } = useParams();
     const api = useApi();
@@ -73,7 +117,12 @@ function Chat() {
         return <div className="text-center text-xl text-red-500">An error occurred: {error.message}</div>;
     }
 
-    return <ChatMessages messages={data?.messages} />;
+    return (
+        <div className="flex flex-col h-full">
+            <ChatMessages messages={data?.messages} />
+            <SendMessageForm chatId={chatId} api={api} />
+        </div>
+    );
 }
 
 export default Chat;
