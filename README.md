@@ -58,3 +58,12 @@ Then run
 ```bash
 npm run dev
 ```
+
+
+To build zip for AWS on Windows:
+
+```bash
+Compress-Archive -Path .\build\* -DestinationPath .\build.zip
+Get-ChildItem -Path .\backend -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
+Compress-Archive -Path .\backend -DestinationPath build.zip -Update
+```
