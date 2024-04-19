@@ -1,3 +1,4 @@
+from mangum import Mangum
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -298,3 +299,5 @@ async def create_message(
     ).first()
 
     return MessageResponse(message=MessagePublic.from_orm(message_public))
+
+lambda_handler = Mangum(app)
