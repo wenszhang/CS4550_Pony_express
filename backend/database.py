@@ -7,7 +7,7 @@ if os.environ.get("DB_LOCATION") == "EFS":
     db_path = "/mnt/efs/pony_express.db"
     echo = False
 else:
-    db_path = "./backend/pony_express.db"
+    db_path = "pony_express.db"
     echo = True
 
 # Create the SQLite database engine
